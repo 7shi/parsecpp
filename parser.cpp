@@ -2,65 +2,76 @@
 #include <string>
 #include <cctype>
 
-bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
-bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
+class Parser {
+private:
+    const char *p;
+public:
+    Parser(const char *p) : p(p) {}
+    char peek() {
+        if (!*p) throw std::string("too short");
+        return *p;
+    }
+    void next() { ++p; }
+};
 
-template<typename T> void parseTest(T (*p)(const char **), const char *s) {
+template<typename T> void parseTest(T (*p)(Parser *), const char *s) {
+    Parser parser = s;
     try {
-        std::cout << p(&s) << std::endl;
+        std::cout << p(&parser) << std::endl;
     } catch (std::string e) {
         std::cout << e << std::endl;
     }
 }
 
-template<bool (*f)(char)> char satisfy(const char **xs, const std::string &err) {
-    if (!xs || !*xs) throw std::string("null pointer");
-    char x = **xs;
-    if (x == '\0') throw std::string("too short");
+template<bool (*f)(char)> char satisfy(Parser *p, const std::string &err) {
+    char x = p->peek();
     if (!f(x)) throw "not " + err + ": '" + x + "'";
-    ++*xs;
+    p->next();
     return x;
 }
-template<bool (*f)(char)> char satisfy(const char **xs) {
-    return satisfy<f>(xs, "???");
-}
-template<int (*f)(int)> bool conv(char ch) { return f(ch); }
-template<int (*f)(int)> char satisfy(const char **xs, const std::string &err) {
-    return satisfy< conv<f> >(xs, err);
+template<bool (*f)(char)> char satisfy(Parser *p) {
+    return satisfy<f>(p, "???");
 }
 
 bool any(char) { return true; }
-char anyChar(const char **xs) { return satisfy<any>(xs, "anyChar"); }
+char anyChar(Parser *p) { return satisfy<any>(p, "anyChar"); }
 
 template<char c> bool isChar(char ch) { return ch == c; }
-template<char c> char char1(const char **xs) {
-    return satisfy< isChar<c> >(xs, std::string("char '") + c + "'");
+template<char c> char char1(Parser *p) {
+    return satisfy< isChar<c> >(p, std::string("char '") + c + "'");
 }
 
-char digit   (const char **xs) { return satisfy<std::isdigit>(xs, "digit"   ); }
-char upper   (const char **xs) { return satisfy<std::isupper>(xs, "upper"   ); }
-char lower   (const char **xs) { return satisfy<std::islower>(xs, "lower"   ); }
-char alpha   (const char **xs) { return satisfy<std::isalpha>(xs, "alpha"   ); }
-char alphaNum(const char **xs) { return satisfy<isAlphaNum  >(xs, "alphaNum"); }
-char letter  (const char **xs) { return satisfy<isLetter    >(xs, "letter"  ); }
+bool isDigit   (char ch) { return std::isdigit(ch); }
+bool isUpper   (char ch) { return std::isupper(ch); }
+bool isLower   (char ch) { return std::islower(ch); }
+bool isAlpha   (char ch) { return std::isalpha(ch); }
+bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
+bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
 
-std::string test1(const char **xs) {
-    char x1 = anyChar(xs);
-    char x2 = anyChar(xs);
+char digit   (Parser *p) { return satisfy<isDigit   >(p, "digit"   ); }
+char upper   (Parser *p) { return satisfy<isUpper   >(p, "upper"   ); }
+char lower   (Parser *p) { return satisfy<isLower   >(p, "lower"   ); }
+char alpha   (Parser *p) { return satisfy<isAlpha   >(p, "alpha"   ); }
+char alphaNum(Parser *p) { return satisfy<isAlphaNum>(p, "alphaNum"); }
+char letter  (Parser *p) { return satisfy<isLetter  >(p, "letter"  ); }
+
+std::string test1(Parser *p) {
+    char x1 = anyChar(p);
+    char x2 = anyChar(p);
     char ret[] = {x1, x2, 0};
     return ret;
 }
 
-std::string test2(const char **xs) {
-    std::string x1 = test1(xs);
-    char x2 = anyChar(xs);
+std::string test2(Parser *p) {
+    std::string x1 = test1(p);
+    char x2 = anyChar(p);
     return x1 + x2;
 }
 
-std::string test3(const char **xs) {
-    char x1 = letter(xs);
-    char x2 = digit(xs);
-    char x3 = digit(xs);
+std::string test3(Parser *p) {
+    char x1 = letter(p);
+    char x2 = digit(p);
+    char x3 = digit(p);
     char ret[] = {x1, x2, x3, 0};
     return ret;
 }
