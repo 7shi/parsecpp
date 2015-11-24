@@ -5,13 +5,19 @@
 class Parser {
 private:
     const char *p;
+
 public:
     Parser(const char *p) : p(p) {}
+
     char peek() {
         if (!*p) throw std::string("too short");
         return *p;
     }
-    void next() { ++p; }
+
+    void next() {
+        if (!*p) throw std::string("at last");
+        ++p;
+    }
 };
 
 template<typename T> void parseTest(T (*p)(Parser *), const char *s) {
