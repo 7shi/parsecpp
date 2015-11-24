@@ -8,35 +8,41 @@ bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
 template<typename T> void parseTest(T (*p)(const char **), const char *s) {
     try {
         std::cout << p(&s) << std::endl;
-    } catch (const char *e) {
+    } catch (std::string e) {
         std::cout << e << std::endl;
     }
 }
 
-template<bool (*f)(char)> char satisfy(const char **xs) {
-    if (!xs || !*xs) throw "null pointer";
+template<bool (*f)(char)> char satisfy(const char **xs, const std::string &err) {
+    if (!xs || !*xs) throw std::string("null pointer");
     char x = **xs;
-    if (x == '\0') throw "too short";
-    if (!f(x)) throw "not satisfy";
+    if (x == '\0') throw std::string("too short");
+    if (!f(x)) throw "not " + err + ": '" + x + "'";
     ++*xs;
     return x;
 }
+template<bool (*f)(char)> char satisfy(const char **xs) {
+    return satisfy<f>(xs, "???");
+}
+template<int (*f)(int)> bool conv(char ch) { return f(ch); }
+template<int (*f)(int)> char satisfy(const char **xs, const std::string &err) {
+    return satisfy< conv<f> >(xs, err);
+}
 
 bool any(char) { return true; }
-char (*anyChar)(const char **) = satisfy<any>;
+char anyChar(const char **xs) { return satisfy<any>(xs, "anyChar"); }
 
 template<char c> bool isChar(char ch) { return ch == c; }
 template<char c> char char1(const char **xs) {
-    return satisfy< isChar<c> >(xs);
+    return satisfy< isChar<c> >(xs, std::string("char '") + c + "'");
 }
 
-template<int (*f)(int)> bool conv(char ch) { return f(ch); }
-char (*digit   )(const char **) = satisfy< conv<std::isdigit> >;
-char (*upper   )(const char **) = satisfy< conv<std::isupper> >;
-char (*lower   )(const char **) = satisfy< conv<std::islower> >;
-char (*alpha   )(const char **) = satisfy< conv<std::isalpha> >;
-char (*alphaNum)(const char **) = satisfy< isAlphaNum >;
-char (*letter  )(const char **) = satisfy< isLetter   >;
+char digit   (const char **xs) { return satisfy<std::isdigit>(xs, "digit"   ); }
+char upper   (const char **xs) { return satisfy<std::isupper>(xs, "upper"   ); }
+char lower   (const char **xs) { return satisfy<std::islower>(xs, "lower"   ); }
+char alpha   (const char **xs) { return satisfy<std::isalpha>(xs, "alpha"   ); }
+char alphaNum(const char **xs) { return satisfy<isAlphaNum  >(xs, "alphaNum"); }
+char letter  (const char **xs) { return satisfy<isLetter    >(xs, "letter"  ); }
 
 std::string test1(const char **xs) {
     char x1 = anyChar(xs);
