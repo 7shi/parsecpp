@@ -140,7 +140,6 @@ template<typename T> struct Many : public UnaryOperator<std::string, T> {
         return ret;
     }
 };
-
 template<typename T> Many<T> many(const Parser<T> &p) { return Many<T>(p); }
 
 template<typename T> struct Or : public BinaryOperator<T, T> {
@@ -158,7 +157,6 @@ template<typename T> struct Or : public BinaryOperator<T, T> {
         return ret;
     }
 };
-
 template<typename T> Or<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
     return Or<T>(p1, p2);
 }
