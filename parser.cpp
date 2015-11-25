@@ -115,11 +115,11 @@ public:
         throw s->ex(msg + ": '" + ch + "'");
     }
 };
-Parser<char> fail(const std::string &msg) {
+Parser<char> left(const std::string &msg) {
     return Left<char>(msg);
 }
 template <typename T>
-Parser<T> fail(const std::string &msg) {
+Parser<T> left(const std::string &msg) {
     return Left<T>(msg);
 }
 
@@ -274,12 +274,12 @@ bool isAlpha   (char ch) { return std::isalpha(ch); }
 bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
 bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
 
-Parser<char> digit    = satisfy(isDigit   ) || fail("not digit"   );
-Parser<char> upper    = satisfy(isUpper   ) || fail("not upper"   );
-Parser<char> lower    = satisfy(isLower   ) || fail("not lower"   );
-Parser<char> alpha    = satisfy(isAlpha   ) || fail("not alpha"   );
-Parser<char> alphaNum = satisfy(isAlphaNum) || fail("not alphaNum");
-Parser<char> letter   = satisfy(isLetter  ) || fail("not letter"  );
+Parser<char> digit    = satisfy(isDigit   ) || left("not digit"   );
+Parser<char> upper    = satisfy(isUpper   ) || left("not upper"   );
+Parser<char> lower    = satisfy(isLower   ) || left("not lower"   );
+Parser<char> alpha    = satisfy(isAlpha   ) || left("not alpha"   );
+Parser<char> alphaNum = satisfy(isAlphaNum) || left("not alphaNum");
+Parser<char> letter   = satisfy(isLetter  ) || left("not letter"  );
 
 Parser<std::string> test1  = anyChar + anyChar;
 Parser<std::string> test2  = test1 + anyChar;
