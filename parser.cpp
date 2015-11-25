@@ -35,32 +35,19 @@ public:
     }
 };
 
-template<typename T> struct Parser {
-    virtual ~Parser() {}
-    virtual Parser *clone() const = 0;
+template<typename T> struct Closure {
+    virtual ~Closure() {}
+    virtual Closure *clone() const = 0;
     virtual T operator()(Source *s) const = 0;
 };
 
-template<typename T, typename T1>
-class UnaryOperator : public Parser<T> {
-protected:
-    Parser<T1> *p;
-
+template<typename T> class Parser {
+    Closure<T> *f;
 public:
-    UnaryOperator(const Parser<T1> &p) : p(p.clone()) {}
-    virtual ~UnaryOperator() { delete p; }
-};
-
-template<typename T, typename T1, typename T2>
-class BinaryOperator : public Parser<T> {
-protected:
-    Parser<T1> *p1;
-    Parser<T2> *p2;
-
-public:
-    BinaryOperator(const Parser<T1> &p1, const Parser<T2> &p2) :
-        p1(p1.clone()), p2(p2.clone()) {}
-    virtual ~BinaryOperator() { delete p1; delete p2; }
+    Closure<T> &get() const { return *f; }
+    Parser(const Closure<T> &f) : f(f.clone()) {}
+    ~Parser() { delete f; }
+    T operator()(Source *s) const { return (*f)(s); }
 };
 
 template<typename T> void parseTest(const Parser<T> &p, const char *s) {
@@ -72,26 +59,27 @@ template<typename T> void parseTest(const Parser<T> &p, const char *s) {
     }
 }
 
-class AnyChar : public Parser<char> {
+class AnyChar : public Closure<char> {
 protected:
     virtual void check(Source *, char) const {}
 
 public:
-    virtual Parser *clone() const { return new AnyChar; }
+    virtual Closure *clone() const { return new AnyChar; }
     virtual char operator()(Source *s) const {
         char ch = s->peek();
         check(s, ch);
         s->next();
         return ch;
     };
-} anyChar;
+};
+Parser<char> anyChar = AnyChar();
 
-class char1 : public AnyChar {
+class Char1 : public AnyChar {
     char ch;
 
 public:
-    char1(char ch) : ch(ch) {}
-    virtual Parser *clone() const { return new char1(ch); }
+    Char1(char ch) : ch(ch) {}
+    virtual Closure *clone() const { return new Char1(ch); }
 
 protected:
     virtual void check(Source *s, char ch) const {
@@ -100,20 +88,24 @@ protected:
         }
     }
 };
+Parser<char> char1(char ch) { return Char1(ch); }
 
-class satisfy : public AnyChar {
+class Satisfy : public AnyChar {
     bool (*f)(char);
     std::string err;
 
 public:
-    satisfy(bool (*f)(char), const std::string &err) : f(f), err(err) {}
-    virtual Parser *clone() const { return new satisfy(f, err); }
+    Satisfy(bool (*f)(char), const std::string &err) : f(f), err(err) {}
+    virtual Closure *clone() const { return new Satisfy(f, err); }
 
 protected:
     virtual void check(Source *s, char ch) const {
         if (!f(ch)) throw s->ex("not " + err + ": '" + ch + "'");
     }
 };
+Parser<char> satisfy(bool (*f)(char), const std::string &err = "???") {
+    return Satisfy(f, err);
+}
 
 bool isDigit   (char ch) { return std::isdigit(ch); }
 bool isUpper   (char ch) { return std::isupper(ch); }
@@ -122,16 +114,38 @@ bool isAlpha   (char ch) { return std::isalpha(ch); }
 bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
 bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
 
-satisfy digit   (isDigit   , "digit"   );
-satisfy upper   (isUpper   , "upper"   );
-satisfy lower   (isLower   , "lower"   );
-satisfy alpha   (isAlpha   , "alpha"   );
-satisfy alphaNum(isAlphaNum, "alphaNum");
-satisfy letter  (isLetter  , "letter"  );
+Parser<char> digit    = satisfy(isDigit   , "digit"   );
+Parser<char> upper    = satisfy(isUpper   , "upper"   );
+Parser<char> lower    = satisfy(isLower   , "lower"   );
+Parser<char> alpha    = satisfy(isAlpha   , "alpha"   );
+Parser<char> alphaNum = satisfy(isAlphaNum, "alphaNum");
+Parser<char> letter   = satisfy(isLetter  , "letter"  );
+
+template<typename T, typename T1>
+class UnaryOperator : public Closure<T> {
+protected:
+    Closure<T1> *p;
+
+public:
+    UnaryOperator(const Closure<T1> &p) : p(p.clone()) {}
+    virtual ~UnaryOperator() { delete p; }
+};
+
+template<typename T, typename T1, typename T2>
+class BinaryOperator : public Closure<T> {
+protected:
+    Closure<T1> *p1;
+    Closure<T2> *p2;
+
+public:
+    BinaryOperator(const Closure<T1> &p1, const Closure<T2> &p2) :
+        p1(p1.clone()), p2(p2.clone()) {}
+    virtual ~BinaryOperator() { delete p1; delete p2; }
+};
 
 struct CharToString : public UnaryOperator<std::string, char> {
-    CharToString(const Parser<char> &p) : UnaryOperator(p) {}
-    virtual Parser *clone() const { return new CharToString(*p); }
+    CharToString(const Closure<char> &p) : UnaryOperator(p) {}
+    virtual Closure *clone() const { return new CharToString(*p); }
 
     virtual std::string operator()(Source *s) const {
         return std::string(1, (*p)(s));
@@ -139,8 +153,8 @@ struct CharToString : public UnaryOperator<std::string, char> {
 };
 
 struct Many : public UnaryOperator<std::string, std::string> {
-    Many(const Parser<std::string> &p) : UnaryOperator(p) {}
-    virtual Parser *clone() const { return new Many(*p); }
+    Many(const Closure<std::string> &p) : UnaryOperator(p) {}
+    virtual Closure *clone() const { return new Many(*p); }
 
     virtual std::string operator()(Source *s) const {
         std::string ret;
@@ -150,13 +164,17 @@ struct Many : public UnaryOperator<std::string, std::string> {
         return ret;
     }
 };
-Many many(const Parser<char> &p) { return Many(CharToString(p)); }
-Many many(const Parser<std::string> &p) { return Many(p); }
+Parser<std::string> many(const Parser<char> &p) {
+    return Many(CharToString(p.get()));
+}
+Parser<std::string> many(const Parser<std::string> &p) {
+    return Many(p.get());
+}
 
 struct Sequence : public BinaryOperator<std::string, std::string, std::string> {
-    Sequence(const Parser<std::string> &p1, const Parser<std::string> &p2) :
+    Sequence(const Closure<std::string> &p1, const Closure<std::string> &p2) :
         BinaryOperator(p1, p2) {}
-    virtual Parser *clone() const {
+    virtual Closure *clone() const {
         return new Sequence(*p1, *p2);
     }
 
@@ -168,22 +186,22 @@ struct Sequence : public BinaryOperator<std::string, std::string, std::string> {
     }
 };
 Sequence operator+(const Parser<char> &p1, const Parser<char> &p2) {
-    return Sequence(CharToString(p1), CharToString(p2));
+    return Sequence(CharToString(p1.get()), CharToString(p2.get()));
 }
 Sequence operator+(const Parser<char> &p1, const Parser<std::string> &p2) {
-    return Sequence(CharToString(p1), p2);
+    return Sequence(CharToString(p1.get()), p2.get());
 }
 Sequence operator+(const Parser<std::string> &p1, const Parser<char> &p2) {
-    return Sequence(p1, CharToString(p2));
+    return Sequence(p1.get(), CharToString(p2.get()));
 }
 Sequence operator+(const Parser<std::string> &p1, const Parser<std::string> &p2) {
-    return Sequence(p1, p2);
+    return Sequence(p1.get(), p2.get());
 }
 
 template<typename T> struct Or : public BinaryOperator<T, T, T> {
-    Or(const Parser<T> &p1, const Parser<T> &p2) :
+    Or(const Closure<T> &p1, const Closure<T> &p2) :
         BinaryOperator<T, T, T>(p1, p2) {}
-    virtual Parser<T> *clone() const { return new Or(*this->p1, *this->p2); }
+    virtual Closure<T> *clone() const { return new Or(*this->p1, *this->p2); }
 
     virtual T operator()(Source *s) const {
         T ret;
@@ -196,24 +214,25 @@ template<typename T> struct Or : public BinaryOperator<T, T, T> {
     }
 };
 template<typename T> Or<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
-    return Or<T>(p1, p2);
+    return Or<T>(p1.get(), p2.get());
 }
 
-Sequence test1 = anyChar + anyChar;
+Parser<std::string> test1 = anyChar + anyChar;
 
-struct Test2 : public Parser<std::string> {
-    virtual Parser *clone() const { return new Test2; }
+struct Test2 : public Closure<std::string> {
+    virtual Closure *clone() const { return new Test2; }
     virtual std::string operator()(Source *s) const {
         std::string x1 = test1(s);
         char x2 = anyChar(s);
         return x1 + x2;
     }
-} test2;
+};
+Parser<std::string> test2 = Test2();
 
-Sequence test3 = letter + digit + digit;
-Or<char> test4 = letter || digit;
-Many test7 = many(letter);
-Many test8 = many(letter || digit);
+Parser<std::string> test3 = letter + digit + digit;
+Parser<char> test4 = letter || digit;
+Parser<std::string> test7 = many(letter);
+Parser<std::string> test8 = many(letter || digit);
 
 int main() {
     parseTest(anyChar   , "abc"   );
