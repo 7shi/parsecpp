@@ -205,7 +205,7 @@ Parser<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
 Parser<std::string> test1 = anyChar + anyChar;
 Parser<std::string> test2 = test1 + anyChar;
 Parser<std::string> test3 = letter + digit + digit;
-Parser<char> test4 = letter || digit;
+Parser<char>        test4 = letter || digit;
 Parser<std::string> test5 = letter + digit + digit + digit;
 Parser<std::string> test7 = many(letter);
 Parser<std::string> test8 = many(letter || digit);
