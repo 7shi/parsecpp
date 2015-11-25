@@ -124,6 +124,29 @@ public:
     }
 };
 
+template<typename T> class Or : public Parser<T> {
+    Parser<T> *p1, *p2;
+
+public:
+    Or(const Parser<T> &p1, const Parser<T> &p2) : p1(p1.clone()), p2(p2.clone()) {}
+    virtual ~Or() { delete p1; delete p2; }
+    virtual Parser<T> *clone() const { return new Or(*p1, *p2); }
+
+    virtual T operator()(Source *s) const {
+        T ret;
+        try {
+            ret = (*p1)(s);
+        } catch (const std::string &e) {
+            ret = (*p2)(s);
+        }
+        return ret;
+    }
+};
+
+template<typename T> Or<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
+    return Or<T>(p1, p2);
+}
+
 struct Test1 : public Parser<std::string> {
     virtual Parser *clone() const { return new Test1; }
     virtual std::string operator()(Source *s) const {
@@ -154,7 +177,9 @@ struct Test3 : public Parser<std::string> {
     }
 } test3;
 
+Or<char> test4 = letter || digit;
 many test7 = many(letter);
+many test8 = many(letter || digit);
 
 int main() {
     parseTest(anyChar   , "abc"   );
@@ -172,6 +197,11 @@ int main() {
     parseTest(test3     , "123"   );  // NG
     parseTest(test3     , "a23"   );
     parseTest(test3     , "a234"  );
+    parseTest(test4     , "a"     );
+    parseTest(test4     , "1"     );
+    parseTest(test4     , "!"     );  // NG
     parseTest(test7     , "abc123");
     parseTest(test7     , "123abc");
+    parseTest(test8     , "abc123");
+    parseTest(test8     , "123abc");
 }
