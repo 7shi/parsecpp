@@ -3,7 +3,6 @@
 #include <string>
 
 class Source {
-private:
     const char *p;
     int line, col;
 public:

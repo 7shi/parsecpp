@@ -4,7 +4,6 @@
 #include <functional>
 
 class Source {
-private:
     const char *p;
     int line, col;
 public:
