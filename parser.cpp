@@ -7,15 +7,12 @@ class Source {
 private:
     const char *p;
     int line, col;
-
 public:
     Source(const char *p) : p(p), line(1), col(1) {}
-
     char peek() {
         if (!*p) throw ex("too short");
         return *p;
     }
-
     void next() {
         if (!*p) throw ex("at last");
         if (*p == '\n') {
@@ -25,13 +22,11 @@ public:
         ++p;
         ++col;
     }
-
     std::string ex(const std::string &msg) {
         std::stringstream ss;
         ss << "[line " << line << ", col " << col << "] " << msg;
         return ss.str();
     }
-
     bool operator==(const Source &s) {
         return p == s.p && line == s.line && col == s.col;
     }
@@ -79,7 +74,6 @@ Parser<char> anyChar = AnyChar();
 
 class Char1 : public Closure<char> {
     char ch;
-
 public:
     Char1(char ch) : ch(ch) {}
     virtual Closure *clone() const { return new Char1(ch); }
@@ -97,7 +91,6 @@ Parser<char> char1(char ch) { return Char1(ch); }
 class Satisfy : public Closure<char> {
     bool (*f)(char);
     std::string err;
-
 public:
     Satisfy(bool (*f)(char), const std::string &err) : f(f), err(err) {}
     virtual Closure *clone() const { return new Satisfy(f, err); }
@@ -130,7 +123,6 @@ template <typename T, typename T1>
 class UnaryOperator : public Closure<T> {
 protected:
     Closure<T1> *p;
-
 public:
     UnaryOperator(const Closure<T1> &p) : p(p.clone()) {}
     virtual ~UnaryOperator() { delete p; }
@@ -152,7 +144,6 @@ template <typename T>
 struct Many : public UnaryOperator<std::string, T> {
     Many(const Closure<T> &p) : UnaryOperator<std::string, T>(p) {}
     virtual Closure<std::string> *clone() const { return new Many<T>(*this->p); }
-
     virtual std::string operator()(Source *s) const {
         std::string ret;
         try {
@@ -173,7 +164,6 @@ struct Sequence : public BinaryOperator<std::string, T1, T2> {
     virtual Closure<std::string> *clone() const {
         return new Sequence(*this->p1, *this->p2);
     }
-
     virtual std::string operator()(Source *s) const {
         std::string ret;
         ret += (*this->p1)(s);
@@ -189,14 +179,12 @@ Parser<std::string> operator+(const Parser<T1> &p1, const Parser<T2> &p2) {
 template <typename T>
 class Replicate : public UnaryOperator<std::string, T> {
     int n;
-
 public:
     Replicate(int n, const Closure<T> &p) :
         UnaryOperator<std::string, T>(p), n(n) {}
     virtual Closure<std::string> *clone() const {
         return new Replicate(n, *this->p);
     }
-
     virtual std::string operator()(Source *s) const {
         std::string ret;
         for (int i = 0; i < n; ++i) ret += (*this->p)(s);
@@ -217,7 +205,6 @@ struct Or : public BinaryOperator<T, T, T> {
     Or(const Closure<T> &p1, const Closure<T> &p2) :
         BinaryOperator<T, T, T>(p1, p2) {}
     virtual Closure<T> *clone() const { return new Or(*this->p1, *this->p2); }
-
     virtual T operator()(Source *s) const {
         T ret;
         Source ss = *s;
@@ -239,7 +226,6 @@ template <typename T>
 struct Try : public UnaryOperator<T, T> {
     Try(const Closure<T> &p) : UnaryOperator<T, T>(p) {}
     virtual Closure<T> *clone() const { return new Try<T>(*this->p); }
-
     virtual T operator()(Source *s) const {
         T ret;
         Source ss = *s;
