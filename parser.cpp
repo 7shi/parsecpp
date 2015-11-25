@@ -31,6 +31,13 @@ public:
         ss << "[line " << line << ", col " << col << "] " << msg;
         return ss.str();
     }
+
+    bool operator==(const Source &s) {
+        return p == s.p && line == s.line && col == s.col;
+    }
+    bool operator!=(const Source &s) {
+        return !(*this == s);
+    }
 };
 
 template <typename T>
@@ -213,9 +220,11 @@ struct Or : public BinaryOperator<T, T, T> {
 
     virtual T operator()(Source *s) const {
         T ret;
+        Source ss = *s;
         try {
             ret = (*this->p1)(s);
         } catch (const std::string &e) {
+            if (*s != ss) throw;
             ret = (*this->p2)(s);
         }
         return ret;
@@ -234,6 +243,7 @@ Parser<std::string> test5 = letter + digit + digit + digit;
 Parser<std::string> test6 = letter + 3 * digit;
 Parser<std::string> test7 = many(letter);
 Parser<std::string> test8 = many(letter || digit);
+Parser<std::string> test9 = char1('a') + char1('b') || char1('a') + char1('c');
 
 int main() {
     parseTest(anyChar   , "abc"   );
@@ -262,4 +272,6 @@ int main() {
     parseTest(test7     , "123abc");
     parseTest(test8     , "abc123");
     parseTest(test8     , "123abc");
+    parseTest(test9     , "ab"    );
+    parseTest(test9     , "ac"    );  // NG
 }
