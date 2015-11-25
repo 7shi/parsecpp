@@ -59,49 +59,46 @@ template<typename T> void parseTest(const Parser<T> &p, const char *s) {
     }
 }
 
-class AnyChar : public Closure<char> {
-protected:
-    virtual void check(Source *, char) const {}
-
-public:
+struct AnyChar : public Closure<char> {
     virtual Closure *clone() const { return new AnyChar; }
     virtual char operator()(Source *s) const {
         char ch = s->peek();
-        check(s, ch);
         s->next();
         return ch;
     };
 };
 Parser<char> anyChar = AnyChar();
 
-class Char1 : public AnyChar {
+class Char1 : public Closure<char> {
     char ch;
 
 public:
     Char1(char ch) : ch(ch) {}
     virtual Closure *clone() const { return new Char1(ch); }
-
-protected:
-    virtual void check(Source *s, char ch) const {
+    virtual char operator()(Source *s) const {
+        char ch = s->peek();
         if (this->ch != ch) {
             throw s->ex(std::string("char '") + this->ch + "': '" + ch + "'");
         }
-    }
+        s->next();
+        return ch;
+    };
 };
 Parser<char> char1(char ch) { return Char1(ch); }
 
-class Satisfy : public AnyChar {
+class Satisfy : public Closure<char> {
     bool (*f)(char);
     std::string err;
 
 public:
     Satisfy(bool (*f)(char), const std::string &err) : f(f), err(err) {}
     virtual Closure *clone() const { return new Satisfy(f, err); }
-
-protected:
-    virtual void check(Source *s, char ch) const {
+    virtual char operator()(Source *s) const {
+        char ch = s->peek();
         if (!f(ch)) throw s->ex("not " + err + ": '" + ch + "'");
-    }
+        s->next();
+        return ch;
+    };
 };
 Parser<char> satisfy(bool (*f)(char), const std::string &err = "???") {
     return Satisfy(f, err);
