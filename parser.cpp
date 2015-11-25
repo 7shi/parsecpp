@@ -210,7 +210,7 @@ template<typename T> struct Or : public BinaryOperator<T, T, T> {
         return ret;
     }
 };
-template<typename T> Or<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
+template<typename T> Parser<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
     return Or<T>(p1.get(), p2.get());
 }
 
