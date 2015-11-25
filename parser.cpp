@@ -180,6 +180,32 @@ Parser<std::string> operator+(const Parser<T1> &p1, const Parser<T2> &p2) {
 }
 
 template <typename T>
+class Replicate : public UnaryOperator<std::string, T> {
+    int n;
+
+public:
+    Replicate(int n, const Closure<T> &p) :
+        UnaryOperator<std::string, T>(p), n(n) {}
+    virtual Closure<std::string> *clone() const {
+        return new Replicate(n, *this->p);
+    }
+
+    virtual std::string operator()(Source *s) const {
+        std::string ret;
+        for (int i = 0; i < n; ++i) ret += (*this->p)(s);
+        return ret;
+    }
+};
+template <typename T>
+Parser<std::string> operator*(int n, const Parser<T> &p) {
+    return Replicate<T>(n, p.get());
+}
+template <typename T>
+Parser<std::string> operator*(const Parser<T> &p, int n) {
+    return Replicate<T>(n, p.get());
+}
+
+template <typename T>
 struct Or : public BinaryOperator<T, T, T> {
     Or(const Closure<T> &p1, const Closure<T> &p2) :
         BinaryOperator<T, T, T>(p1, p2) {}
@@ -205,6 +231,7 @@ Parser<std::string> test2 = test1 + anyChar;
 Parser<std::string> test3 = letter + digit + digit;
 Parser<char>        test4 = letter || digit;
 Parser<std::string> test5 = letter + digit + digit + digit;
+Parser<std::string> test6 = letter + 3 * digit;
 Parser<std::string> test7 = many(letter);
 Parser<std::string> test8 = many(letter || digit);
 
@@ -229,6 +256,8 @@ int main() {
     parseTest(test4     , "!"     );  // NG
     parseTest(test5     , "a123"  );
     parseTest(test5     , "ab123" );  // NG
+    parseTest(test6     , "a123"  );
+    parseTest(test6     , "ab123" );  // NG
     parseTest(test7     , "abc123");
     parseTest(test7     , "123abc");
     parseTest(test8     , "abc123");
