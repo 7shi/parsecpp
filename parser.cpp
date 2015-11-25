@@ -243,6 +243,26 @@ Parser<T> tryp(const Parser<T> &p) {
     return Try<T>(p.get());
 }
 
+class String : public Closure<std::string> {
+    std::string str;
+public:
+    String(const std::string &str) : str(str) {}
+    virtual Closure *clone() const { return new String(str); }
+    virtual std::string operator()(Source *s) const {
+        for (int i = 0; i < str.length(); ++i) {
+            char ch = s->peek();
+            if (ch != str[i]) {
+                throw s->ex(std::string("not string \"") + str + "\": '" + ch + "'");
+            }
+            s->next();
+        }
+        return str;
+    }
+};
+Parser<std::string> string(const std::string &str) {
+    return String(str);
+}
+
 Parser<std::string> test1  = anyChar + anyChar;
 Parser<std::string> test2  = test1 + anyChar;
 Parser<std::string> test3  = letter + digit + digit;
@@ -253,6 +273,8 @@ Parser<std::string> test7  = many(letter);
 Parser<std::string> test8  = many(letter || digit);
 Parser<std::string> test9  = char1('a') + char1('b') || char1('a') + char1('c');
 Parser<std::string> test10 = tryp(char1('a') + char1('b')) || char1('a') + char1('c');
+Parser<std::string> test11 =      string("ab")  || string("ac");
+Parser<std::string> test12 = tryp(string("ab")) || string("ac");
 
 int main() {
     parseTest(anyChar   , "abc"   );
@@ -285,4 +307,8 @@ int main() {
     parseTest(test9     , "ac"    );  // NG
     parseTest(test10    , "ab"    );
     parseTest(test10    , "ac"    );
+    parseTest(test11    , "ab"    );
+    parseTest(test11    , "ac"    );  // NG
+    parseTest(test12    , "ab"    );
+    parseTest(test12    , "ac"    );
 }
