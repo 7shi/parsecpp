@@ -107,6 +107,23 @@ satisfy alpha   (isAlpha   , "alpha"   );
 satisfy alphaNum(isAlphaNum, "alphaNum");
 satisfy letter  (isLetter  , "letter"  );
 
+class many : public Parser<std::string> {
+    Parser<char> *p;
+
+public:
+    many(const Parser<char> &p) : p(p.clone()) {}
+    virtual ~many() { delete p; }
+    virtual Parser *clone() const { return new many(*p); }
+
+    virtual std::string operator()(Source *s) const {
+        std::string ret;
+        try {
+            for (;;) ret += (*p)(s);
+        } catch (const std::string &e) {}
+        return ret;
+    }
+};
+
 struct Test1 : public Parser<std::string> {
     virtual Parser *clone() const { return new Test1; }
     virtual std::string operator()(Source *s) const {
@@ -137,20 +154,24 @@ struct Test3 : public Parser<std::string> {
     }
 } test3;
 
+many test7 = many(letter);
+
 int main() {
-    parseTest(anyChar   , "abc" );
-    parseTest(test1     , "abc" );
-    parseTest(test2     , "abc" );
-    parseTest(test2     , "12"  );  // NG
-    parseTest(test2     , "123" );
-    parseTest(char1('a'), "abc" );
-    parseTest(char1('a'), "123" );  // NG
-    parseTest(digit     , "abc" );  // NG
-    parseTest(digit     , "123" );
-    parseTest(letter    , "abc" );
-    parseTest(letter    , "123" );  // NG
-    parseTest(test3     , "abc" );  // NG
-    parseTest(test3     , "123" );  // NG
-    parseTest(test3     , "a23" );
-    parseTest(test3     , "a234");
+    parseTest(anyChar   , "abc"   );
+    parseTest(test1     , "abc"   );
+    parseTest(test2     , "abc"   );
+    parseTest(test2     , "12"    );  // NG
+    parseTest(test2     , "123"   );
+    parseTest(char1('a'), "abc"   );
+    parseTest(char1('a'), "123"   );  // NG
+    parseTest(digit     , "abc"   );  // NG
+    parseTest(digit     , "123"   );
+    parseTest(letter    , "abc"   );
+    parseTest(letter    , "123"   );  // NG
+    parseTest(test3     , "abc"   );  // NG
+    parseTest(test3     , "123"   );  // NG
+    parseTest(test3     , "a23"   );
+    parseTest(test3     , "a234"  );
+    parseTest(test7     , "abc123");
+    parseTest(test7     , "123abc");
 }
