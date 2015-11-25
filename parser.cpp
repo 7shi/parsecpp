@@ -1,7 +1,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cctype>
 
 class Source {
 private:
@@ -160,7 +159,6 @@ class BinaryOperator : public Closure<T> {
 protected:
     Closure<T1> *p1;
     Closure<T2> *p2;
-
 public:
     BinaryOperator(const Closure<T1> &p1, const Closure<T2> &p2) :
         p1(p1.clone()), p2(p2.clone()) {}
@@ -314,7 +312,10 @@ Parser<std::string> string(const std::string &str) {
     return String(str);
 }
 
-/**/
+/*
+import Data.Char
+*/
+#include <cctype>
 bool isDigit   (char ch) { return std::isdigit(ch); }
 bool isUpper   (char ch) { return std::isupper(ch); }
 bool isLower   (char ch) { return std::islower(ch); }
