@@ -90,34 +90,38 @@ Parser<char> char1(char ch) { return Char1(ch); }
 
 class Satisfy : public Closure<char> {
     bool (*f)(char);
-    std::string err;
 public:
-    Satisfy(bool (*f)(char), const std::string &err) : f(f), err(err) {}
-    virtual Closure *clone() const { return new Satisfy(f, err); }
+    Satisfy(bool (*f)(char)) : f(f) {}
+    virtual Closure *clone() const { return new Satisfy(f); }
     virtual char operator()(Source *s) const {
         char ch = s->peek();
-        if (!f(ch)) throw s->ex("not " + err + ": '" + ch + "'");
+        if (!f(ch)) throw s->ex(std::string("error: '") + ch + "'");
         s->next();
         return ch;
     }
 };
-Parser<char> satisfy(bool (*f)(char), const std::string &err = "???") {
-    return Satisfy(f, err);
+Parser<char> satisfy(bool (*f)(char)) {
+    return Satisfy(f);
 }
 
-bool isDigit   (char ch) { return std::isdigit(ch); }
-bool isUpper   (char ch) { return std::isupper(ch); }
-bool isLower   (char ch) { return std::islower(ch); }
-bool isAlpha   (char ch) { return std::isalpha(ch); }
-bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
-bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
-
-Parser<char> digit    = satisfy(isDigit   , "digit"   );
-Parser<char> upper    = satisfy(isUpper   , "upper"   );
-Parser<char> lower    = satisfy(isLower   , "lower"   );
-Parser<char> alpha    = satisfy(isAlpha   , "alpha"   );
-Parser<char> alphaNum = satisfy(isAlphaNum, "alphaNum");
-Parser<char> letter   = satisfy(isLetter  , "letter"  );
+template <typename T>
+class Left : public Closure<T> {
+    std::string msg;
+public:
+    Left(const std::string &msg) : msg(msg) {}
+    virtual Closure<T> *clone() const { return new Left(msg); }
+    virtual T operator()(Source *s) const {
+        char ch = s->peek();
+        throw s->ex(msg + ": '" + ch + "'");
+    }
+};
+Parser<char> fail(const std::string &msg) {
+    return Left<char>(msg);
+}
+template <typename T>
+Parser<T> fail(const std::string &msg) {
+    return Left<T>(msg);
+}
 
 template <typename T, typename T1>
 class UnaryOperator : public Closure<T> {
@@ -262,6 +266,20 @@ public:
 Parser<std::string> string(const std::string &str) {
     return String(str);
 }
+
+bool isDigit   (char ch) { return std::isdigit(ch); }
+bool isUpper   (char ch) { return std::isupper(ch); }
+bool isLower   (char ch) { return std::islower(ch); }
+bool isAlpha   (char ch) { return std::isalpha(ch); }
+bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
+bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
+
+Parser<char> digit    = satisfy(isDigit   ) || fail("not digit"   );
+Parser<char> upper    = satisfy(isUpper   ) || fail("not upper"   );
+Parser<char> lower    = satisfy(isLower   ) || fail("not lower"   );
+Parser<char> alpha    = satisfy(isAlpha   ) || fail("not alpha"   );
+Parser<char> alphaNum = satisfy(isAlphaNum) || fail("not alphaNum");
+Parser<char> letter   = satisfy(isLetter  ) || fail("not letter"  );
 
 Parser<std::string> test1  = anyChar + anyChar;
 Parser<std::string> test2  = test1 + anyChar;
