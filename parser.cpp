@@ -235,15 +235,38 @@ Parser<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
     return Or<T>(p1.get(), p2.get());
 }
 
-Parser<std::string> test1 = anyChar + anyChar;
-Parser<std::string> test2 = test1 + anyChar;
-Parser<std::string> test3 = letter + digit + digit;
-Parser<char>        test4 = letter || digit;
-Parser<std::string> test5 = letter + digit + digit + digit;
-Parser<std::string> test6 = letter + 3 * digit;
-Parser<std::string> test7 = many(letter);
-Parser<std::string> test8 = many(letter || digit);
-Parser<std::string> test9 = char1('a') + char1('b') || char1('a') + char1('c');
+template <typename T>
+struct Try : public UnaryOperator<T, T> {
+    Try(const Closure<T> &p) : UnaryOperator<T, T>(p) {}
+    virtual Closure<T> *clone() const { return new Try<T>(*this->p); }
+
+    virtual T operator()(Source *s) const {
+        T ret;
+        Source ss = *s;
+        try {
+            ret = (*this->p)(s);
+        } catch (const std::string &e) {
+            *s = ss;
+            throw;
+        }
+        return ret;
+    }
+};
+template <typename T>
+Parser<T> tryp(const Parser<T> &p) {
+    return Try<T>(p.get());
+}
+
+Parser<std::string> test1  = anyChar + anyChar;
+Parser<std::string> test2  = test1 + anyChar;
+Parser<std::string> test3  = letter + digit + digit;
+Parser<char>        test4  = letter || digit;
+Parser<std::string> test5  = letter + digit + digit + digit;
+Parser<std::string> test6  = letter + 3 * digit;
+Parser<std::string> test7  = many(letter);
+Parser<std::string> test8  = many(letter || digit);
+Parser<std::string> test9  = char1('a') + char1('b') || char1('a') + char1('c');
+Parser<std::string> test10 = tryp(char1('a') + char1('b')) || char1('a') + char1('c');
 
 int main() {
     parseTest(anyChar   , "abc"   );
@@ -274,4 +297,6 @@ int main() {
     parseTest(test8     , "123abc");
     parseTest(test9     , "ab"    );
     parseTest(test9     , "ac"    );  // NG
+    parseTest(test10    , "ab"    );
+    parseTest(test10    , "ac"    );
 }
