@@ -129,38 +129,55 @@ satisfy alpha   (isAlpha   , "alpha"   );
 satisfy alphaNum(isAlphaNum, "alphaNum");
 satisfy letter  (isLetter  , "letter"  );
 
-template<typename T> struct Many : public UnaryOperator<std::string, T> {
-    Many(const Parser<T> &p) : UnaryOperator<std::string, T>(p) {}
-    virtual Parser<std::string> *clone() const { return new Many(*this->p); }
+struct CharToString : public UnaryOperator<std::string, char> {
+    CharToString(const Parser<char> &p) : UnaryOperator(p) {}
+    virtual Parser *clone() const { return new CharToString(*p); }
+
+    virtual std::string operator()(Source *s) const {
+        return std::string(1, (*p)(s));
+    }
+};
+
+struct Many : public UnaryOperator<std::string, std::string> {
+    Many(const Parser<std::string> &p) : UnaryOperator(p) {}
+    virtual Parser *clone() const { return new Many(*p); }
 
     virtual std::string operator()(Source *s) const {
         std::string ret;
         try {
-            for (;;) ret += (*this->p)(s);
+            for (;;) ret += (*p)(s);
         } catch (const std::string &e) {}
         return ret;
     }
 };
-template<typename T> Many<T> many(const Parser<T> &p) { return Many<T>(p); }
+Many many(const Parser<char> &p) { return Many(CharToString(p)); }
+Many many(const Parser<std::string> &p) { return Many(p); }
 
-template<typename T1, typename T2>
-struct Sequence : public BinaryOperator<std::string, T1, T2> {
-    Sequence(const Parser<T1> &p1, const Parser<T2> &p2) :
-        BinaryOperator<std::string, T1, T2>(p1, p2) {}
-    virtual Parser<std::string> *clone() const {
-        return new Sequence(*this->p1, *this->p2);
+struct Sequence : public BinaryOperator<std::string, std::string, std::string> {
+    Sequence(const Parser<std::string> &p1, const Parser<std::string> &p2) :
+        BinaryOperator(p1, p2) {}
+    virtual Parser *clone() const {
+        return new Sequence(*p1, *p2);
     }
 
     virtual std::string operator()(Source *s) const {
         std::string ret;
-        ret += (*this->p1)(s);
-        ret += (*this->p2)(s);
+        ret += (*p1)(s);
+        ret += (*p2)(s);
         return ret;
     }
 };
-template<typename T1, typename T2>
-Sequence<T1, T2> operator+(const Parser<T1> &p1, const Parser<T2> &p2) {
-    return Sequence<T1, T2>(p1, p2);
+Sequence operator+(const Parser<char> &p1, const Parser<char> &p2) {
+    return Sequence(CharToString(p1), CharToString(p2));
+}
+Sequence operator+(const Parser<char> &p1, const Parser<std::string> &p2) {
+    return Sequence(CharToString(p1), p2);
+}
+Sequence operator+(const Parser<std::string> &p1, const Parser<char> &p2) {
+    return Sequence(p1, CharToString(p2));
+}
+Sequence operator+(const Parser<std::string> &p1, const Parser<std::string> &p2) {
+    return Sequence(p1, p2);
 }
 
 template<typename T> struct Or : public BinaryOperator<T, T, T> {
@@ -182,7 +199,7 @@ template<typename T> Or<T> operator||(const Parser<T> &p1, const Parser<T> &p2) 
     return Or<T>(p1, p2);
 }
 
-Sequence<char, char> test1 = anyChar + anyChar;
+Sequence test1 = anyChar + anyChar;
 
 struct Test2 : public Parser<std::string> {
     virtual Parser *clone() const { return new Test2; }
@@ -193,10 +210,10 @@ struct Test2 : public Parser<std::string> {
     }
 } test2;
 
-Sequence<std::string, char> test3 = letter + digit + digit;
+Sequence test3 = letter + digit + digit;
 Or<char> test4 = letter || digit;
-Many<char> test7 = many(letter);
-Many<char> test8 = many(letter || digit);
+Many test7 = many(letter);
+Many test8 = many(letter || digit);
 
 int main() {
     parseTest(anyChar   , "abc"   );
