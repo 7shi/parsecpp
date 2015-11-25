@@ -1,7 +1,9 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <list>
 #include <cctype>
+#include <cstdarg>
 
 class Source {
 private:
@@ -34,6 +36,8 @@ public:
 };
 
 template<typename T> struct Parser {
+    virtual ~Parser() {}
+    virtual Parser *clone() const = 0;
     virtual T operator()(Source *s) const = 0;
 };
 
@@ -51,6 +55,7 @@ protected:
     virtual void check(Source *, char) const {}
 
 public:
+    virtual Parser *clone() const { return new AnyChar; }
     virtual char operator()(Source *s) const {
         char ch = s->peek();
         check(s, ch);
@@ -64,6 +69,7 @@ class char1 : public AnyChar {
 
 public:
     char1(char ch) : ch(ch) {}
+    virtual Parser *clone() const { return new char1(ch); }
 
 protected:
     virtual void check(Source *s, char ch) const {
@@ -79,6 +85,7 @@ class satisfy : public AnyChar {
 
 public:
     satisfy(bool (*f)(char), const std::string &err) : f(f), err(err) {}
+    virtual Parser *clone() const { return new satisfy(f, err); }
 
 protected:
     virtual void check(Source *s, char ch) const {
@@ -101,6 +108,7 @@ satisfy alphaNum(isAlphaNum, "alphaNum");
 satisfy letter  (isLetter  , "letter"  );
 
 struct Test1 : public Parser<std::string> {
+    virtual Parser *clone() const { return new Test1; }
     virtual std::string operator()(Source *s) const {
         char x1 = anyChar(s);
         char x2 = anyChar(s);
@@ -110,6 +118,7 @@ struct Test1 : public Parser<std::string> {
 } test1;
 
 struct Test2 : public Parser<std::string> {
+    virtual Parser *clone() const { return new Test2; }
     virtual std::string operator()(Source *s) const {
         std::string x1 = test1(s);
         char x2 = anyChar(s);
@@ -118,6 +127,7 @@ struct Test2 : public Parser<std::string> {
 } test2;
 
 struct Test3 : public Parser<std::string> {
+    virtual Parser *clone() const { return new Test3; }
     virtual std::string operator()(Source *s) const {
         char x1 = letter(s);
         char x2 = digit(s);
