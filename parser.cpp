@@ -86,7 +86,7 @@ public:
     virtual char operator()(Source *s) const {
         char ch = s->peek();
         if (this->ch != ch) {
-            throw s->ex(std::string("char '") + this->ch + "': '" + ch + "'");
+            throw s->ex(std::string("not char '") + this->ch + "': '" + ch + "'");
         }
         s->next();
         return ch;
