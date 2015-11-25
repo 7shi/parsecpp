@@ -143,15 +143,6 @@ public:
     virtual ~BinaryOperator() { delete p1; delete p2; }
 };
 
-struct CharToString : public UnaryOperator<std::string, char> {
-    CharToString(const Closure<char> &p) : UnaryOperator(p) {}
-    virtual Closure *clone() const { return new CharToString(*p); }
-
-    virtual std::string operator()(Source *s) const {
-        return std::string(1, (*p)(s));
-    }
-};
-
 template <typename T>
 struct Many : public UnaryOperator<std::string, T> {
     Many(const Closure<T> &p) : UnaryOperator<std::string, T>(p) {}
