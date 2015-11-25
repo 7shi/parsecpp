@@ -128,18 +128,20 @@ satisfy alpha   (isAlpha   , "alpha"   );
 satisfy alphaNum(isAlphaNum, "alphaNum");
 satisfy letter  (isLetter  , "letter"  );
 
-struct many : public UnaryOperator<std::string, char> {
-    many(const Parser<char> &p) : UnaryOperator(p) {}
-    virtual Parser *clone() const { return new many(*p); }
+template<typename T> struct Many : public UnaryOperator<std::string, T> {
+    Many(const Parser<T> &p) : UnaryOperator<std::string, T>(p) {}
+    virtual Parser<std::string> *clone() const { return new Many(*this->p); }
 
     virtual std::string operator()(Source *s) const {
         std::string ret;
         try {
-            for (;;) ret += (*p)(s);
+            for (;;) ret += (*this->p)(s);
         } catch (const std::string &e) {}
         return ret;
     }
 };
+
+template<typename T> Many<T> many(const Parser<T> &p) { return Many<T>(p); }
 
 template<typename T> struct Or : public BinaryOperator<T, T> {
     Or(const Parser<T> &p1, const Parser<T> &p2) :
@@ -192,8 +194,8 @@ struct Test3 : public Parser<std::string> {
 } test3;
 
 Or<char> test4 = letter || digit;
-many test7 = many(letter);
-many test8 = many(letter || digit);
+Many<char> test7 = many(letter);
+Many<char> test8 = many(letter || digit);
 
 int main() {
     parseTest(anyChar   , "abc"   );
