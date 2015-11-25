@@ -35,13 +35,15 @@ public:
     }
 };
 
-template<typename T> struct Closure {
+template <typename T>
+struct Closure {
     virtual ~Closure() {}
     virtual Closure *clone() const = 0;
     virtual T operator()(Source *s) const = 0;
 };
 
-template<typename T> class Parser {
+template <typename T>
+class Parser {
     Closure<T> *f;
 public:
     Closure<T> &get() const { return *f; }
@@ -50,7 +52,8 @@ public:
     T operator()(Source *s) const { return (*f)(s); }
 };
 
-template<typename T> void parseTest(const Parser<T> &p, const char *s) {
+template <typename T>
+void parseTest(const Parser<T> &p, const char *s) {
     Source src = s;
     try {
         std::cout << p(&src) << std::endl;
@@ -118,7 +121,7 @@ Parser<char> alpha    = satisfy(isAlpha   , "alpha"   );
 Parser<char> alphaNum = satisfy(isAlphaNum, "alphaNum");
 Parser<char> letter   = satisfy(isLetter  , "letter"  );
 
-template<typename T, typename T1>
+template <typename T, typename T1>
 class UnaryOperator : public Closure<T> {
 protected:
     Closure<T1> *p;
@@ -128,7 +131,7 @@ public:
     virtual ~UnaryOperator() { delete p; }
 };
 
-template<typename T, typename T1, typename T2>
+template <typename T, typename T1, typename T2>
 class BinaryOperator : public Closure<T> {
 protected:
     Closure<T1> *p1;
@@ -187,7 +190,8 @@ Parser<std::string> operator+(const Parser<T1> &p1, const Parser<T2> &p2) {
     return Sequence<T1, T2>(p1.get(), p2.get());
 }
 
-template<typename T> struct Or : public BinaryOperator<T, T, T> {
+template <typename T>
+struct Or : public BinaryOperator<T, T, T> {
     Or(const Closure<T> &p1, const Closure<T> &p2) :
         BinaryOperator<T, T, T>(p1, p2) {}
     virtual Closure<T> *clone() const { return new Or(*this->p1, *this->p2); }
@@ -202,7 +206,8 @@ template<typename T> struct Or : public BinaryOperator<T, T, T> {
         return ret;
     }
 };
-template<typename T> Parser<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
+template <typename T>
+Parser<T> operator||(const Parser<T> &p1, const Parser<T> &p2) {
     return Or<T>(p1.get(), p2.get());
 }
 
