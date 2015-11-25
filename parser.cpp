@@ -143,6 +143,26 @@ template<typename T> struct Many : public UnaryOperator<std::string, T> {
 };
 template<typename T> Many<T> many(const Parser<T> &p) { return Many<T>(p); }
 
+template<typename T1, typename T2>
+struct Sequence : public BinaryOperator<std::string, T1, T2> {
+    Sequence(const Parser<T1> &p1, const Parser<T2> &p2) :
+        BinaryOperator<std::string, T1, T2>(p1, p2) {}
+    virtual Parser<std::string> *clone() const {
+        return new Sequence(*this->p1, *this->p2);
+    }
+
+    virtual std::string operator()(Source *s) const {
+        std::string ret;
+        ret += (*this->p1)(s);
+        ret += (*this->p2)(s);
+        return ret;
+    }
+};
+template<typename T1, typename T2>
+Sequence<T1, T2> operator+(const Parser<T1> &p1, const Parser<T2> &p2) {
+    return Sequence<T1, T2>(p1, p2);
+}
+
 template<typename T> struct Or : public BinaryOperator<T, T, T> {
     Or(const Parser<T> &p1, const Parser<T> &p2) :
         BinaryOperator<T, T, T>(p1, p2) {}
@@ -162,15 +182,7 @@ template<typename T> Or<T> operator||(const Parser<T> &p1, const Parser<T> &p2) 
     return Or<T>(p1, p2);
 }
 
-struct Test1 : public Parser<std::string> {
-    virtual Parser *clone() const { return new Test1; }
-    virtual std::string operator()(Source *s) const {
-        char x1 = anyChar(s);
-        char x2 = anyChar(s);
-        char ret[] = { x1, x2, 0 };
-        return ret;
-    }
-} test1;
+Sequence<char, char> test1 = anyChar + anyChar;
 
 struct Test2 : public Parser<std::string> {
     virtual Parser *clone() const { return new Test2; }
@@ -181,17 +193,7 @@ struct Test2 : public Parser<std::string> {
     }
 } test2;
 
-struct Test3 : public Parser<std::string> {
-    virtual Parser *clone() const { return new Test3; }
-    virtual std::string operator()(Source *s) const {
-        char x1 = letter(s);
-        char x2 = digit(s);
-        char x3 = digit(s);
-        char ret[] = { x1, x2, x3, 0 };
-        return ret;
-    }
-} test3;
-
+Sequence<std::string, char> test3 = letter + digit + digit;
 Or<char> test4 = letter || digit;
 Many<char> test7 = many(letter);
 Many<char> test8 = many(letter || digit);
