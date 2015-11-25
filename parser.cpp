@@ -33,20 +33,11 @@ public:
     }
 };
 
-class Parser {
-protected:
-    virtual void check(Source *, char) const {}
+template<typename T> struct Parser {
+    virtual T operator()(Source *s) const = 0;
+};
 
-public:
-    virtual std::string operator()(Source *s) const {
-        char ch = s->peek();
-        check(s, ch);
-        s->next();
-        return std::string(1, ch);
-    };
-} anyChar;
-
-void parseTest(const Parser &p, const char *s) {
+template<typename T> void parseTest(const Parser<T> &p, const char *s) {
     Source src = s;
     try {
         std::cout << p(&src) << std::endl;
@@ -55,7 +46,20 @@ void parseTest(const Parser &p, const char *s) {
     }
 }
 
-class char1 : public Parser {
+class AnyChar : public Parser<char> {
+protected:
+    virtual void check(Source *, char) const {}
+
+public:
+    virtual char operator()(Source *s) const {
+        char ch = s->peek();
+        check(s, ch);
+        s->next();
+        return ch;
+    };
+} anyChar;
+
+class char1 : public AnyChar {
     char ch;
 
 public:
@@ -69,7 +73,7 @@ protected:
     }
 };
 
-class satisfy : public Parser {
+class satisfy : public AnyChar {
     bool (*f)(char);
     std::string err;
 
@@ -96,28 +100,30 @@ satisfy alpha   (isAlpha   , "alpha"   );
 satisfy alphaNum(isAlphaNum, "alphaNum");
 satisfy letter  (isLetter  , "letter"  );
 
-struct Test1 : public Parser {
+struct Test1 : public Parser<std::string> {
     virtual std::string operator()(Source *s) const {
-        std::string x1 = anyChar(s);
-        std::string x2 = anyChar(s);
-        return x1 + x2;
+        char x1 = anyChar(s);
+        char x2 = anyChar(s);
+        char ret[] = { x1, x2, 0 };
+        return ret;
     }
 } test1;
 
-struct Test2 : public Parser {
+struct Test2 : public Parser<std::string> {
     virtual std::string operator()(Source *s) const {
         std::string x1 = test1(s);
-        std::string x2 = anyChar(s);
+        char x2 = anyChar(s);
         return x1 + x2;
     }
 } test2;
 
-struct Test3 : public Parser {
+struct Test3 : public Parser<std::string> {
     virtual std::string operator()(Source *s) const {
-        std::string x1 = letter(s);
-        std::string x2 = digit(s);
-        std::string x3 = digit(s);
-        return x1 + x2 + x3;
+        char x1 = letter(s);
+        char x2 = digit(s);
+        char x3 = digit(s);
+        char ret[] = { x1, x2, x3, 0 };
+        return ret;
     }
 } test3;
 
