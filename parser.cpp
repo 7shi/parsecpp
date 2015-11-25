@@ -275,6 +275,7 @@ Parser<std::string> test9  =      char1('a') + char1('b')  || char1('a') + char1
 Parser<std::string> test10 = tryp(char1('a') + char1('b')) || char1('a') + char1('c');
 Parser<std::string> test11 =      string("ab")  || string("ac");
 Parser<std::string> test12 = tryp(string("ab")) || string("ac");
+Parser<std::string> test13 = char1('a') + (char1('b') || char1('c'));
 
 int main() {
     parseTest(anyChar   , "abc"   );
@@ -311,4 +312,6 @@ int main() {
     parseTest(test11    , "ac"    );  // NG
     parseTest(test12    , "ab"    );
     parseTest(test12    , "ac"    );
+    parseTest(test13    , "ab"    );
+    parseTest(test13    , "ac"    );
 }
