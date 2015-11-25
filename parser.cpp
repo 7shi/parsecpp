@@ -41,23 +41,24 @@ template<typename T> struct Parser {
     virtual T operator()(Source *s) const = 0;
 };
 
-template<typename T1, typename T2>
-class UnaryOperator : public Parser<T1> {
+template<typename T, typename T1>
+class UnaryOperator : public Parser<T> {
 protected:
-    Parser<T2> *p;
+    Parser<T1> *p;
 
 public:
-    UnaryOperator(const Parser<T2> &p) : p(p.clone()) {}
+    UnaryOperator(const Parser<T1> &p) : p(p.clone()) {}
     virtual ~UnaryOperator() { delete p; }
 };
 
-template<typename T1, typename T2>
-class BinaryOperator : public Parser<T1> {
+template<typename T, typename T1, typename T2>
+class BinaryOperator : public Parser<T> {
 protected:
-    Parser<T2> *p1, *p2;
+    Parser<T1> *p1;
+    Parser<T2> *p2;
 
 public:
-    BinaryOperator(const Parser<T2> &p1, const Parser<T2> &p2) :
+    BinaryOperator(const Parser<T1> &p1, const Parser<T2> &p2) :
         p1(p1.clone()), p2(p2.clone()) {}
     virtual ~BinaryOperator() { delete p1; delete p2; }
 };
@@ -142,9 +143,9 @@ template<typename T> struct Many : public UnaryOperator<std::string, T> {
 };
 template<typename T> Many<T> many(const Parser<T> &p) { return Many<T>(p); }
 
-template<typename T> struct Or : public BinaryOperator<T, T> {
+template<typename T> struct Or : public BinaryOperator<T, T, T> {
     Or(const Parser<T> &p1, const Parser<T> &p2) :
-        BinaryOperator<T, T>(p1, p2) {}
+        BinaryOperator<T, T, T>(p1, p2) {}
     virtual Parser<T> *clone() const { return new Or(*this->p1, *this->p2); }
 
     virtual T operator()(Source *s) const {
