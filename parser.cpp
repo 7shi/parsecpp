@@ -1,9 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <list>
 #include <cctype>
-#include <cstdarg>
 
 class Source {
 private:
