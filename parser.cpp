@@ -42,12 +42,12 @@ struct Closure {
 
 template <typename T>
 class Parser {
-    Closure<T> *f;
+    Closure<T> *p;
 public:
-    Closure<T> &get() const { return *f; }
-    Parser(const Closure<T> &f) : f(f.clone()) {}
-    ~Parser() { delete f; }
-    T operator()(Source *s) const { return (*f)(s); }
+    Closure<T> &get() const { return *p; }
+    Parser(const Closure<T> &p) : p(p.clone()) {}
+    ~Parser() { delete p; }
+    T operator()(Source *s) const { return (*p)(s); }
 };
 
 template <typename T>
