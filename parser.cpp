@@ -215,17 +215,7 @@ template<typename T> Or<T> operator||(const Parser<T> &p1, const Parser<T> &p2) 
 }
 
 Parser<std::string> test1 = anyChar + anyChar;
-
-struct Test2 : public Closure<std::string> {
-    virtual Closure *clone() const { return new Test2; }
-    virtual std::string operator()(Source *s) const {
-        std::string x1 = test1(s);
-        char x2 = anyChar(s);
-        return x1 + x2;
-    }
-};
-Parser<std::string> test2 = Test2();
-
+Parser<std::string> test2 = test1 + anyChar;
 Parser<std::string> test3 = letter + digit + digit;
 Parser<char> test4 = letter || digit;
 Parser<std::string> test7 = many(letter);
