@@ -206,6 +206,7 @@ Parser<std::string> test1 = anyChar + anyChar;
 Parser<std::string> test2 = test1 + anyChar;
 Parser<std::string> test3 = letter + digit + digit;
 Parser<char> test4 = letter || digit;
+Parser<std::string> test5 = letter + digit + digit + digit;
 Parser<std::string> test7 = many(letter);
 Parser<std::string> test8 = many(letter || digit);
 
@@ -228,6 +229,8 @@ int main() {
     parseTest(test4     , "a"     );
     parseTest(test4     , "1"     );
     parseTest(test4     , "!"     );  // NG
+    parseTest(test5     , "a123"  );
+    parseTest(test5     , "ab123" );  // NG
     parseTest(test7     , "abc123");
     parseTest(test7     , "123abc");
     parseTest(test8     , "abc123");
