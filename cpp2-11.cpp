@@ -94,7 +94,6 @@ Parser<char> satisfy(const std::function<bool (char)> &f) {
 /*
 left e = StateT $ \s -> Left (e, s)
 */
-
 template <typename T>
 Parser<T> left(const std::string &msg) {
     return [=](Source *s) -> T {
