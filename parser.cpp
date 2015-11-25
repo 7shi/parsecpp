@@ -45,7 +45,7 @@ template<typename T> void parseTest(const Parser<T> &p, const char *s) {
     Source src = s;
     try {
         std::cout << p(&src) << std::endl;
-    } catch (std::string e) {
+    } catch (const std::string &e) {
         std::cout << e << std::endl;
     }
 }
