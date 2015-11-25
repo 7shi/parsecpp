@@ -1,22 +1,35 @@
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <cctype>
 
 class Source {
 private:
     const char *p;
+    int line, col;
 
 public:
-    Source(const char *p) : p(p) {}
+    Source(const char *p) : p(p), line(1), col(1) {}
 
     char peek() {
-        if (!*p) throw std::string("too short");
+        if (!*p) throw ex("too short");
         return *p;
     }
 
     void next() {
-        if (!*p) throw std::string("at last");
+        if (!*p) throw ex("at last");
+        if (*p == '\n') {
+            ++line;
+            col = 0;
+        }
         ++p;
+        ++col;
+    }
+
+    std::string ex(const std::string &msg) {
+        std::stringstream ss;
+        ss << "[line " << line << ", col " << col << "] " << msg;
+        return ss.str();
     }
 };
 
@@ -31,7 +44,7 @@ void parseTest(std::string (*p)(Source *), const char *s) {
 
 template<bool (*f)(char)> std::string satisfy(Source *s, const std::string &err) {
     char x = s->peek();
-    if (!f(x)) throw "not " + err + ": '" + x + "'";
+    if (!f(x)) throw s->ex("not " + err + ": '" + x + "'");
     s->next();
     return std::string(1, x);
 }
