@@ -41,6 +41,27 @@ template<typename T> struct Parser {
     virtual T operator()(Source *s) const = 0;
 };
 
+template<typename T1, typename T2>
+class UnaryOperator : public Parser<T1> {
+protected:
+    Parser<T2> *p;
+
+public:
+    UnaryOperator(const Parser<T2> &p) : p(p.clone()) {}
+    virtual ~UnaryOperator() { delete p; }
+};
+
+template<typename T1, typename T2>
+class BinaryOperator : public Parser<T1> {
+protected:
+    Parser<T2> *p1, *p2;
+
+public:
+    BinaryOperator(const Parser<T2> &p1, const Parser<T2> &p2) :
+        p1(p1.clone()), p2(p2.clone()) {}
+    virtual ~BinaryOperator() { delete p1; delete p2; }
+};
+
 template<typename T> void parseTest(const Parser<T> &p, const char *s) {
     Source src = s;
     try {
@@ -107,12 +128,8 @@ satisfy alpha   (isAlpha   , "alpha"   );
 satisfy alphaNum(isAlphaNum, "alphaNum");
 satisfy letter  (isLetter  , "letter"  );
 
-class many : public Parser<std::string> {
-    Parser<char> *p;
-
-public:
-    many(const Parser<char> &p) : p(p.clone()) {}
-    virtual ~many() { delete p; }
+struct many : public UnaryOperator<std::string, char> {
+    many(const Parser<char> &p) : UnaryOperator(p) {}
     virtual Parser *clone() const { return new many(*p); }
 
     virtual std::string operator()(Source *s) const {
@@ -124,20 +141,17 @@ public:
     }
 };
 
-template<typename T> class Or : public Parser<T> {
-    Parser<T> *p1, *p2;
-
-public:
-    Or(const Parser<T> &p1, const Parser<T> &p2) : p1(p1.clone()), p2(p2.clone()) {}
-    virtual ~Or() { delete p1; delete p2; }
-    virtual Parser<T> *clone() const { return new Or(*p1, *p2); }
+template<typename T> struct Or : public BinaryOperator<T, T> {
+    Or(const Parser<T> &p1, const Parser<T> &p2) :
+        BinaryOperator<T, T>(p1, p2) {}
+    virtual Parser<T> *clone() const { return new Or(*this->p1, *this->p2); }
 
     virtual T operator()(Source *s) const {
         T ret;
         try {
-            ret = (*p1)(s);
+            ret = (*this->p1)(s);
         } catch (const std::string &e) {
-            ret = (*p2)(s);
+            ret = (*this->p2)(s);
         }
         return ret;
     }
