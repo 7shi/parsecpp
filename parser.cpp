@@ -149,50 +149,42 @@ struct CharToString : public UnaryOperator<std::string, char> {
     }
 };
 
-struct Many : public UnaryOperator<std::string, std::string> {
-    Many(const Closure<std::string> &p) : UnaryOperator(p) {}
-    virtual Closure *clone() const { return new Many(*p); }
+template <typename T>
+struct Many : public UnaryOperator<std::string, T> {
+    Many(const Closure<T> &p) : UnaryOperator<std::string, T>(p) {}
+    virtual Closure<std::string> *clone() const { return new Many<T>(*this->p); }
 
     virtual std::string operator()(Source *s) const {
         std::string ret;
         try {
-            for (;;) ret += (*p)(s);
+            for (;;) ret += (*this->p)(s);
         } catch (const std::string &e) {}
         return ret;
     }
 };
-Parser<std::string> many(const Parser<char> &p) {
-    return Many(CharToString(p.get()));
-}
-Parser<std::string> many(const Parser<std::string> &p) {
-    return Many(p.get());
+template <typename T>
+Parser<std::string> many(const Parser<T> &p) {
+    return Many<T>(p.get());
 }
 
-struct Sequence : public BinaryOperator<std::string, std::string, std::string> {
-    Sequence(const Closure<std::string> &p1, const Closure<std::string> &p2) :
-        BinaryOperator(p1, p2) {}
-    virtual Closure *clone() const {
-        return new Sequence(*p1, *p2);
+template <typename T1, typename T2>
+struct Sequence : public BinaryOperator<std::string, T1, T2> {
+    Sequence(const Closure<T1> &p1, const Closure<T2> &p2) :
+        BinaryOperator<std::string, T1, T2>(p1, p2) {}
+    virtual Closure<std::string> *clone() const {
+        return new Sequence(*this->p1, *this->p2);
     }
 
     virtual std::string operator()(Source *s) const {
         std::string ret;
-        ret += (*p1)(s);
-        ret += (*p2)(s);
+        ret += (*this->p1)(s);
+        ret += (*this->p2)(s);
         return ret;
     }
 };
-Sequence operator+(const Parser<char> &p1, const Parser<char> &p2) {
-    return Sequence(CharToString(p1.get()), CharToString(p2.get()));
-}
-Sequence operator+(const Parser<char> &p1, const Parser<std::string> &p2) {
-    return Sequence(CharToString(p1.get()), p2.get());
-}
-Sequence operator+(const Parser<std::string> &p1, const Parser<char> &p2) {
-    return Sequence(p1.get(), CharToString(p2.get()));
-}
-Sequence operator+(const Parser<std::string> &p1, const Parser<std::string> &p2) {
-    return Sequence(p1.get(), p2.get());
+template <typename T1, typename T2>
+Parser<std::string> operator+(const Parser<T1> &p1, const Parser<T2> &p2) {
+    return Sequence<T1, T2>(p1.get(), p2.get());
 }
 
 template<typename T> struct Or : public BinaryOperator<T, T, T> {
