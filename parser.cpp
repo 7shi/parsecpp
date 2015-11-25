@@ -68,7 +68,7 @@ struct AnyChar : public Closure<char> {
         char ch = s->peek();
         s->next();
         return ch;
-    };
+    }
 };
 Parser<char> anyChar = AnyChar();
 
@@ -84,7 +84,7 @@ public:
         }
         s->next();
         return ch;
-    };
+    }
 };
 Parser<char> char1(char ch) { return Char1(ch); }
 
@@ -99,7 +99,7 @@ public:
         if (!f(ch)) throw s->ex("not " + err + ": '" + ch + "'");
         s->next();
         return ch;
-    };
+    }
 };
 Parser<char> satisfy(bool (*f)(char), const std::string &err = "???") {
     return Satisfy(f, err);
