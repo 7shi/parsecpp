@@ -359,11 +359,17 @@ Parser<int> number = [](Source *s) {
 /*
 eval m fs = foldl (\x f -> f x) <$> m <*> fs
 */
-int eval(int m, const std::list<std::function<int (int)>> &fs) {
-    for (auto it = fs.begin(); it != fs.end(); ++it) {
-        m = (*it)(m);
-    }
-    return m;
+Parser<int> eval(
+        const Parser<int> &m,
+        const Parser<std::list<std::function<int (int)>>> &fs) {
+    return [=](Source *s) {
+        int x = m(s);
+        auto xs = fs(s);
+        for (auto it = xs.begin(); it != xs.end(); ++it) {
+            x = (*it)(x);
+        }
+        return x;
+    };
 }
 
 /*
@@ -380,21 +386,20 @@ Parser<std::function<int (int)>> apply(
     };
 }
 
+// a forward declaration and a wrapper
+extern Parser<int> factor_;
+Parser<int> factor = [](Source *s) { return factor_(s); };
+
 /*
 -- term = factor, {("*", factor) | ("/", factor)}
 term = eval factor $ many $
         char '*' *> apply (*) factor
     <|> char '/' *> apply div factor
 */
-extern Parser<int> factor;
-Parser<int> term = [](Source *s) {
-    int x = factor(s);
-    auto xs = many(
-           char1('*') >> apply([](int x, int y) { return x * y; }, factor)
-        || char1('/') >> apply([](int x, int y) { return x / y; }, factor)
-    )(s);
-    return eval(x, xs);
-};
+auto term = eval(factor, many(
+       char1('*') >> apply([](int x, int y) { return x * y; }, factor)
+    || char1('/') >> apply([](int x, int y) { return x / y; }, factor)
+));
 
 /*
 -- expr = term, {("+", term) | ("-", term)}
@@ -402,14 +407,10 @@ expr = eval term $ many $
         char '+' *> apply (+) term
     <|> char '-' *> apply (-) term
 */
-Parser<int> expr = [](Source *s) {
-    int x = term(s);
-    auto xs = many(
-           char1('+') >> apply([](int x, int y) { return x + y; }, term)
-        || char1('-') >> apply([](int x, int y) { return x - y; }, term)
-    )(s);
-    return eval(x, xs);
-};
+auto expr = eval(term, many(
+       char1('+') >> apply([](int x, int y) { return x + y; }, term)
+    || char1('-') >> apply([](int x, int y) { return x - y; }, term)
+));
 
 /*
 -- factor = [spaces], ("(", expr, ")") | number, [spaces]
@@ -417,7 +418,7 @@ factor = spaces
       *> (char '(' *> expr <* char ')' <|> number)
      <*  spaces
 */
-Parser<int> factor = spaces
+Parser<int> factor_ = spaces
                   >> (char1('(') >> expr << char1(')') || number)
                   << spaces;
 
