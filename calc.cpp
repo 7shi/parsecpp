@@ -407,6 +407,20 @@ Parser<T2> operator>>(const Parser<T1> &p1, const Parser<T2> &p2) {
     return ReturnRight<T1, T2>(p1.get(), p2.get());
 }
 
+/* >>= */
+template <typename T1, typename T2>
+class Bind : public UnaryOperator<T2, T1> {
+    T2 (*f)(T1);
+public:
+    Bind(const Closure<T1> &p, T2 (*f)(T1)) : UnaryOperator<T2, T1>(p), f(f) {}
+    virtual Closure<T2> *clone() const { return new Bind<T1, T2>(*this->p, f); }
+    virtual T2 operator()(Source *s) const { return f((*this->p)(s)); }
+};
+template <typename T1, typename T2>
+Parser<T2> operator>=(const Parser<T1> &p, T2 (*f)(T1)) {
+    return Bind<T1, T2>(p.get(), f);
+}
+
 /*
 import Data.Char
 */
