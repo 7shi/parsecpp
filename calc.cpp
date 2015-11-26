@@ -493,17 +493,12 @@ int foldl(int x, const std::list<Section> &xs) {
 }
 
 /*
-term = do
-    x  <- number
-    fs <- many $ do
-            char '*'
-            y <- number
-            return (* y)
-        <|> do
-            char '/'
-            y <- number
-            return (`div` y)
-    return $ foldl (\x f -> f x) x fs
+eval m fs = foldl (\x f -> f x) <$> m <*> fs
+apply f m = flip f <$> m
+
+term = eval number $ many $
+        char '*' *> apply (*) number
+    <|> char '/' *> apply div number
 */
 struct Term : public Closure<int> {
     virtual Closure *clone() const { return new Term; }
@@ -519,17 +514,9 @@ struct Term : public Closure<int> {
 Parser<int> term = Term();
 
 /*
-expr = do
-    x  <- term
-    fs <- many $ do
-            char '+'
-            y <- term
-            return (+ y)
-        <|> do
-            char '-'
-            y <- term
-            return $ subtract y
-    return $ foldl (\x f -> f x) x fs
+expr = eval term $ many $
+        char '+' *> apply (+) term
+    <|> char '-' *> apply (-) term
 */
 struct Expr : public Closure<int> {
     virtual Closure *clone() const { return new Expr; }
