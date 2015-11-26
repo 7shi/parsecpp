@@ -153,6 +153,22 @@ Parser<char> satisfy(bool (*f)(char)) {
     return Satisfy(f);
 }
 
+/* right */
+template <typename T>
+class Right : public Closure<T> {
+    T r;
+public:
+    Right(const T &r) : r(r) {}
+    virtual Closure<T> *clone() const { return new Right(r); }
+    virtual T operator()(Source *s) const {
+        return r;
+    }
+};
+template <typename T>
+Parser<T> right(const T &r) {
+    return Right<T>(r);
+}
+
 /*
 left e = StateT $ \s -> Left (e, s)
 */
