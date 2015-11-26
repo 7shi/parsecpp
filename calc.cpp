@@ -213,6 +213,57 @@ public:
     virtual ~BinaryOperator() { delete p1; delete p2; }
 };
 
+/* >>, *> */
+template <typename T1, typename T2>
+struct ReturnRight : public BinaryOperator<T2, T1, T2> {
+    ReturnRight(const Closure<T1> &p1, const Closure<T2> &p2) :
+        BinaryOperator<T2, T1, T2>(p1, p2) {}
+    virtual Closure<T2> *clone() const {
+        return new ReturnRight(*this->p1, *this->p2);
+    }
+    virtual T2 operator()(Source *s) const {
+        (*this->p1)(s);
+        return (*this->p2)(s);
+    }
+};
+template <typename T1, typename T2>
+Parser<T2> operator>>(const Parser<T1> &p1, const Parser<T2> &p2) {
+    return ReturnRight<T1, T2>(p1.get(), p2.get());
+}
+
+/* <* */
+template <typename T1, typename T2>
+struct ReturnLeft : public BinaryOperator<T1, T1, T2> {
+    ReturnLeft(const Closure<T1> &p1, const Closure<T2> &p2) :
+        BinaryOperator<T1, T1, T2>(p1, p2) {}
+    virtual Closure<T1> *clone() const {
+        return new ReturnLeft(*this->p1, *this->p2);
+    }
+    virtual T1 operator()(Source *s) const {
+        T1 ret = (*this->p1)(s);
+        (*this->p2)(s);
+        return ret;
+    }
+};
+template <typename T1, typename T2>
+Parser<T1> operator<<(const Parser<T1> &p1, const Parser<T2> &p2) {
+    return ReturnLeft<T1, T2>(p1.get(), p2.get());
+}
+
+/* >>= */
+template <typename T1, typename T2>
+class Bind : public UnaryOperator<T2, T1> {
+    T2 (*f)(T1);
+public:
+    Bind(const Closure<T1> &p, T2 (*f)(T1)) : UnaryOperator<T2, T1>(p), f(f) {}
+    virtual Closure<T2> *clone() const { return new Bind<T1, T2>(*this->p, f); }
+    virtual T2 operator()(Source *s) const { return f((*this->p)(s)); }
+};
+template <typename T1, typename T2>
+Parser<T2> operator>=(const Parser<T1> &p, T2 (*f)(T1)) {
+    return Bind<T1, T2>(p.get(), f);
+}
+
 /* sequence */
 template <typename T1, typename T2>
 struct Sequence : public BinaryOperator<std::string, T1, T2> {
@@ -403,57 +454,6 @@ Parser<std::string> many1(const Parser<std::string> &p) {
 template <typename T>
 Parser< std::list<T> > many1(const Parser<T> &p) {
     return Many1<T>(p.get());
-}
-
-/* >>, *> */
-template <typename T1, typename T2>
-struct ReturnRight : public BinaryOperator<T2, T1, T2> {
-    ReturnRight(const Closure<T1> &p1, const Closure<T2> &p2) :
-        BinaryOperator<T2, T1, T2>(p1, p2) {}
-    virtual Closure<T2> *clone() const {
-        return new ReturnRight(*this->p1, *this->p2);
-    }
-    virtual T2 operator()(Source *s) const {
-        (*this->p1)(s);
-        return (*this->p2)(s);
-    }
-};
-template <typename T1, typename T2>
-Parser<T2> operator>>(const Parser<T1> &p1, const Parser<T2> &p2) {
-    return ReturnRight<T1, T2>(p1.get(), p2.get());
-}
-
-/* <* */
-template <typename T1, typename T2>
-struct ReturnLeft : public BinaryOperator<T1, T1, T2> {
-    ReturnLeft(const Closure<T1> &p1, const Closure<T2> &p2) :
-        BinaryOperator<T1, T1, T2>(p1, p2) {}
-    virtual Closure<T1> *clone() const {
-        return new ReturnLeft(*this->p1, *this->p2);
-    }
-    virtual T1 operator()(Source *s) const {
-        T1 ret = (*this->p1)(s);
-        (*this->p2)(s);
-        return ret;
-    }
-};
-template <typename T1, typename T2>
-Parser<T1> operator<<(const Parser<T1> &p1, const Parser<T2> &p2) {
-    return ReturnLeft<T1, T2>(p1.get(), p2.get());
-}
-
-/* >>= */
-template <typename T1, typename T2>
-class Bind : public UnaryOperator<T2, T1> {
-    T2 (*f)(T1);
-public:
-    Bind(const Closure<T1> &p, T2 (*f)(T1)) : UnaryOperator<T2, T1>(p), f(f) {}
-    virtual Closure<T2> *clone() const { return new Bind<T1, T2>(*this->p, f); }
-    virtual T2 operator()(Source *s) const { return f((*this->p)(s)); }
-};
-template <typename T1, typename T2>
-Parser<T2> operator>=(const Parser<T1> &p, T2 (*f)(T1)) {
-    return Bind<T1, T2>(p.get(), f);
 }
 
 /*
