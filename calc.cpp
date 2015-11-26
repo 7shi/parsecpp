@@ -455,17 +455,17 @@ expr = do
     xs <- many $ do
         char '+'
         number
-    return $ x:xs
+    return $ sum $ x:xs
 */
-struct Expr : public Closure< std::list<int> > {
+struct Expr : public Closure<int> {
     virtual Closure *clone() const { return new Expr; }
-    virtual std::list<int> operator()(Source *s) const {
+    virtual int operator()(Source *s) const {
         int x = number(s);
         std::list<int> xs = many(char1('+') >> number)(s);
-        return x + xs;
+        return sum(x + xs);
     }
 };
-Parser< std::list<int> > expr = Expr();
+Parser<int> expr = Expr();
 
 /*
 main = do
