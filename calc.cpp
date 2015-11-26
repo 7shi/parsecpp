@@ -449,6 +449,18 @@ struct Number : public Closure<int> {
 };
 Parser<int> number = Number();
 
+/**/
+struct Neg : public UnaryOperator<int, int> {
+    Neg(const Closure<int> &p) : UnaryOperator(p) {}
+    virtual Closure *clone() const { return new Neg(*p); }
+    virtual int operator()(Source *s) const {
+        return -(*p)(s);
+    }
+};
+Parser<int> neg(const Parser<int> &p) {
+    return Neg(p.get());
+}
+
 /*
 expr = do
     x  <- number
