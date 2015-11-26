@@ -497,6 +497,12 @@ Section add(int y) { return Section(Add, y); }
 Section sub(int y) { return Section(Sub, y); }
 Section mul(int y) { return Section(Mul, y); }
 Section div(int y) { return Section(Div, y); }
+int foldl(int x, const std::list<Section> &xs) {
+    for (std::list<Section>::const_iterator it = xs.begin(); it != xs.end(); ++it) {
+        x = (*it)(x);
+    }
+    return x;
+}
 
 /*
 expr = do
