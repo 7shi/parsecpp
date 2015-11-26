@@ -586,33 +586,37 @@ struct Expr : public Closure<int> {
 Parser<int> expr = Expr();
 
 /*
--- factor = ("(", expr, ")") | number
-factor = char '(' *> expr <* char ')' <|> number
+-- factor = [spaces], ("(", expr, ")") | number, [spaces]
+factor = spaces
+      *> (char '(' *> expr <* char ')' <|> number)
+     <*  spaces
 */
-Parser<int> factor = char1('(') >> expr << char1(')') || number;
+Parser<int> factor = spaces
+                  >> (char1('(') >> expr << char1(')') || number)
+                  << spaces;
 
 /*
 main = do
     parseTest number "123"
-    parseTest expr   "1+2"
+    parseTest expr   "1 + 2"
     parseTest expr   "123"
-    parseTest expr   "1+2+3"
-    parseTest expr   "1-2-3"
-    parseTest expr   "1-2+3"
-    parseTest expr   "2*3+4"
-    parseTest expr   "2+3*4"
-    parseTest expr   "100/10/2"
-    parseTest expr   "(2+3)*4"
+    parseTest expr   "1 + 2 + 3"
+    parseTest expr   "1 - 2 - 3"
+    parseTest expr   "1 - 2 + 3"
+    parseTest expr   "2 * 3 + 4"
+    parseTest expr   "2 + 3 * 4"
+    parseTest expr   "100 / 10 / 2"
+    parseTest expr   "( 2 + 3 ) * 4"
 */
 int main() {
     parseTest(number, "123");
-    parseTest(expr  , "1+2");
+    parseTest(expr  , "1 + 2");
     parseTest(expr  , "123");
-    parseTest(expr  , "1+2+3");
-    parseTest(expr  , "1-2-3");
-    parseTest(expr  , "1-2+3");
-    parseTest(expr  , "2*3+4");
-    parseTest(expr  , "2+3*4");
-    parseTest(expr  , "100/10/2");
-    parseTest(expr  , "(2+3)*4");
+    parseTest(expr  , "1 + 2 + 3");
+    parseTest(expr  , "1 - 2 - 3");
+    parseTest(expr  , "1 - 2 + 3");
+    parseTest(expr  , "2 * 3 + 4");
+    parseTest(expr  , "2 + 3 * 4");
+    parseTest(expr  , "100 / 10 / 2");
+    parseTest(expr  , "( 2 + 3 ) * 4");
 }
