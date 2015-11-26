@@ -250,20 +250,6 @@ Parser<T1> operator<<(const Parser<T1> &p1, const Parser<T2> &p2) {
     return ReturnLeft<T1, T2>(p1.get(), p2.get());
 }
 
-/* >>= */
-template <typename T1, typename T2>
-class Bind : public UnaryOperator<T2, T1> {
-    T2 (*f)(T1);
-public:
-    Bind(const Closure<T1> &p, T2 (*f)(T1)) : UnaryOperator<T2, T1>(p), f(f) {}
-    virtual Closure<T2> *clone() const { return new Bind<T1, T2>(*this->p, f); }
-    virtual T2 operator()(Source *s) const { return f((*this->p)(s)); }
-};
-template <typename T1, typename T2>
-Parser<T2> operator>=(const Parser<T1> &p, T2 (*f)(T1)) {
-    return Bind<T1, T2>(p.get(), f);
-}
-
 /* sequence */
 template <typename T1, typename T2>
 struct Sequence : public BinaryOperator<std::string, T1, T2> {
@@ -498,10 +484,27 @@ spaces = skipMany space
 */
 Parser<std::string> spaces = skipMany(space);
 
+/**/
+template <typename T>
+class Bind {
+    T (*f)(T, T);
+    T x;
+public:
+    Bind() {}
+    Bind(T (*f)(T, T), T x) : f(f), x(x) {}
+    T operator()(int y) const {
+        return f(x, y);
+    }
+};
+template <typename T>
+Bind<T> bind(T (*f)(T, T), T x) {
+    return Bind<T>(f, x);
+}
+
 /*
 number = do
     x <- many1 digit
-    return (read x :: Int)  -- •ÏŠ·
+    return (read x :: Int)
 */
 struct Number : public Closure<int> {
     virtual Closure *clone() const { return new Number; }
@@ -514,39 +517,34 @@ struct Number : public Closure<int> {
 };
 Parser<int> number = Number();
 
-/* add x = (+ x) -- etc */
-enum IntOp { Add, Sub, Mul, Div };
-class Section {
-    IntOp op;
-    int y;
-public:
-    Section() {}
-    Section(IntOp op, int y) : op(op), y(y) {}
-    int operator()(int x) const {
-        switch (op) {
-        case Add: return x + y;
-        case Sub: return x - y;
-        case Mul: return x * y;
-        case Div: return x / y;
-        }
-        throw std::string("invalid operator");
+/*
+eval m fs = foldl (\x f -> f x) <$> m <*> fs
+*/
+int eval(int m, const std::list< Bind<int> > &fs) {
+    for (std::list< Bind<int> >::const_iterator it = fs.begin(); it != fs.end(); ++it) {
+        m = (*it)(m);
     }
-};
-Section add(int y) { return Section(Add, y); }
-Section sub(int y) { return Section(Sub, y); }
-Section mul(int y) { return Section(Mul, y); }
-Section div(int y) { return Section(Div, y); }
-int foldl(int x, const std::list<Section> &xs) {
-    for (std::list<Section>::const_iterator it = xs.begin(); it != xs.end(); ++it) {
-        x = (*it)(x);
-    }
-    return x;
+    return m;
 }
 
 /*
-eval m fs = foldl (\x f -> f x) <$> m <*> fs
 apply f m = flip f <$> m
+*/
+class Apply : public UnaryOperator<Bind<int>, int> {
+    int (*f)(int, int);
+public:
+    Apply(const Closure<int> &p, int (*f)(int, int)) :
+        UnaryOperator(p), f(f) {}
+    virtual Closure *clone() const { return new Apply(*p, f); }
+    virtual Bind<int> operator()(Source *s) const {
+        return bind(f, (*p)(s));
+    }
+};
+Parser< Bind<int> > apply(int (*f)(int, int), const Parser<int> &p) {
+    return Apply(p.get(), f);
+}
 
+/*
 -- term = factor, {("*", factor) | ("/", factor)}
 term = eval factor $ many $
         char '*' *> apply (*) factor
@@ -555,13 +553,15 @@ term = eval factor $ many $
 extern Parser<int> factor;
 struct Term : public Closure<int> {
     virtual Closure *clone() const { return new Term; }
+    static int mul(int x, int y) { return y * x; }
+    static int div(int x, int y) { return y / x; }
     virtual int operator()(Source *s) const {
         int x = factor(s);
-        std::list<Section> xs = many(
-               char1('*') >> factor >= mul
-            || char1('/') >> factor >= div
+        std::list< Bind<int> > xs = many(
+               char1('*') >> apply(mul, factor)
+            || char1('/') >> apply(div, factor)
         )(s);
-        return foldl(x, xs);
+        return eval(x, xs);
     }
 };
 Parser<int> term = Term();
@@ -574,13 +574,15 @@ expr = eval term $ many $
 */
 struct Expr : public Closure<int> {
     virtual Closure *clone() const { return new Expr; }
+    static int add(int x, int y) { return y + x; }
+    static int sub(int x, int y) { return y - x; }
     virtual int operator()(Source *s) const {
         int x = term(s);
-        std::list<Section> xs = many(
-               char1('+') >> term >= add
-            || char1('-') >> term >= sub
+        std::list< Bind<int> > xs = many(
+               char1('+') >> apply(add, term)
+            || char1('-') >> apply(sub, term)
         )(s);
-        return foldl(x, xs);
+        return eval(x, xs);
     }
 };
 Parser<int> expr = Expr();
