@@ -475,6 +475,29 @@ Parser<int> neg(const Parser<int> &p) {
     return Neg(p.get());
 }
 
+/* add x = (+ x) -- etc */
+enum IntOp { Add, Sub, Mul, Div };
+class Section {
+    IntOp op;
+    int y;
+public:
+    Section() {}
+    Section(IntOp op, int y) : op(op), y(y) {}
+    int operator()(int x) const {
+        switch (op) {
+        case Add: return x + y;
+        case Sub: return x - y;
+        case Mul: return x * y;
+        case Div: return x / y;
+        }
+        throw std::string("invalid operator");
+    }
+};
+Section add(int y) { return Section(Add, y); }
+Section sub(int y) { return Section(Sub, y); }
+Section mul(int y) { return Section(Mul, y); }
+Section div(int y) { return Section(Div, y); }
+
 /*
 expr = do
     x  <- number
