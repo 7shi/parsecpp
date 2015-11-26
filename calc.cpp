@@ -440,7 +440,7 @@ struct Many1 : public UnaryOperator<std::list<T>, T> {
         std::list<T> ret;
         ret.push_back((*this->p)(s));
         try {
-            for (;;) ret.push_back(*this->p)(s);
+            for (;;) ret.push_back((*this->p)(s));
         } catch (const std::string &e) {}
         return ret;
     }
