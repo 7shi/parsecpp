@@ -1,6 +1,24 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <list>
+
+template <typename T>
+std::string toString(const std::list<T> &list) {
+    std::stringstream ss;
+    ss << "[";
+    for (typename std::list<T>::const_iterator it = list.begin();
+            it != list.end(); ++it) {
+        if (it != list.begin()) ss << ",";
+        ss << *it;
+    }
+    ss << "]";
+    return ss.str();
+}
+template <typename T>
+std::ostream &operator<<(std::ostream &cout, const std::list<T> &list) {
+    return cout << toString(list);
+}
 
 class Source {
     const char *p;
