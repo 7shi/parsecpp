@@ -515,17 +515,19 @@ int foldl(int x, const std::list<Section> &xs) {
 eval m fs = foldl (\x f -> f x) <$> m <*> fs
 apply f m = flip f <$> m
 
-term = eval number $ many $
-        char '*' *> apply (*) number
-    <|> char '/' *> apply div number
+-- term = factor, {("*", factor) | ("/", factor)}
+term = eval factor $ many $
+        char '*' *> apply (*) factor
+    <|> char '/' *> apply div factor
 */
+extern Parser<int> factor;
 struct Term : public Closure<int> {
     virtual Closure *clone() const { return new Term; }
     virtual int operator()(Source *s) const {
-        int x = number(s);
+        int x = factor(s);
         std::list<Section> xs = many(
-               char1('*') >> number >= mul
-            || char1('/') >> number >= div
+               char1('*') >> factor >= mul
+            || char1('/') >> factor >= div
         )(s);
         return foldl(x, xs);
     }
@@ -533,6 +535,7 @@ struct Term : public Closure<int> {
 Parser<int> term = Term();
 
 /*
+-- expr = term, {("+", term) | ("-", term)}
 expr = eval term $ many $
         char '+' *> apply (+) term
     <|> char '-' *> apply (-) term
@@ -551,6 +554,12 @@ struct Expr : public Closure<int> {
 Parser<int> expr = Expr();
 
 /*
+-- factor = ("(", expr, ")") | number
+factor = char '(' *> expr <* char ')' <|> number
+*/
+Parser<int> factor = char1('(') >> expr << char1(')') || number;
+
+/*
 main = do
     parseTest number "123"
     parseTest expr   "1+2"
@@ -561,6 +570,7 @@ main = do
     parseTest expr   "2*3+4"
     parseTest expr   "2+3*4"
     parseTest expr   "100/10/2"
+    parseTest expr   "(2+3)*4"
 */
 int main() {
     parseTest(number, "123");
@@ -572,4 +582,5 @@ int main() {
     parseTest(expr  , "2*3+4");
     parseTest(expr  , "2+3*4");
     parseTest(expr  , "100/10/2");
+    parseTest(expr  , "(2+3)*4");
 }
