@@ -324,17 +324,54 @@ struct Many : public UnaryOperator<std::string, T> {
         return ret;
     }
 };
+Parser<std::string> many(const Parser<char> &p) {
+    return Many<char>(p.get());
+}
+Parser<std::string> many(const Parser<std::string> &p) {
+    return Many<std::string>(p.get());
+}
 template <typename T>
-Parser<std::string> many(const Parser<T> &p) {
-    return Many<T>(p.get());
+struct ManyList : public UnaryOperator<std::list<T>, T> {
+    ManyList(const Closure<T> &p) : UnaryOperator<std::list<T>, T>(p) {}
+    virtual Closure< std::list<T> > *clone() const { return new ManyList<T>(*this->p); }
+    virtual std::list<T> operator()(Source *s) const {
+        std::list<T> ret;
+        try {
+            for (;;) ret.push_back((*this->p)(s));
+        } catch (const std::string &e) {}
+        return ret;
+    }
+};
+template <typename T>
+Parser< std::list<T> > many(const Parser<T> &p) {
+    return ManyList<T>(p.get());
 }
 
 /*
 many1 p = (:) <$> p <*> many p
 */
 template <typename T>
-Parser<std::string> many1(const Parser<T> &p) {
+struct Many1 : public UnaryOperator<std::list<T>, T> {
+    Many1(const Closure<T> &p) : UnaryOperator<std::list<T>, T>(p) {}
+    virtual Closure< std::list<T> > *clone() const { return new Many1<T>(*this->p); }
+    virtual std::list<T> operator()(Source *s) const {
+        std::list<T> ret;
+        ret.push_back((*this->p)(s));
+        try {
+            for (;;) ret.push_back(*this->p)(s);
+        } catch (const std::string &e) {}
+        return ret;
+    }
+};
+Parser<std::string> many1(const Parser<char> &p) {
     return p + many(p);
+}
+Parser<std::string> many1(const Parser<std::string> &p) {
+    return p + many(p);
+}
+template <typename T>
+Parser< std::list<T> > many1(const Parser<T> &p) {
+    return Many1<T>(p.get());
 }
 
 /* >>, *> */
