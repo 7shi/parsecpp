@@ -337,6 +337,24 @@ Parser<std::string> many1(const Parser<T> &p) {
     return p + many(p);
 }
 
+/* >>, *> */
+template <typename T1, typename T2>
+struct ReturnRight : public BinaryOperator<T2, T1, T2> {
+    ReturnRight(const Closure<T1> &p1, const Closure<T2> &p2) :
+        BinaryOperator<T2, T1, T2>(p1, p2) {}
+    virtual Closure<T2> *clone() const {
+        return new ReturnRight(*this->p1, *this->p2);
+    }
+    virtual T2 operator()(Source *s) const {
+        (*this->p1)(s);
+        return (*this->p2)(s);
+    }
+};
+template <typename T1, typename T2>
+Parser<T2> operator>>(const Parser<T1> &p1, const Parser<T2> &p2) {
+    return ReturnRight<T1, T2>(p1.get(), p2.get());
+}
+
 /*
 import Data.Char
 */
