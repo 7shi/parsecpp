@@ -492,6 +492,8 @@ main = do
     parseTest expr   "1+2"
     parseTest expr   "123"
     parseTest expr   "1+2+3"
+    parseTest expr   "1-2-3"
+    parseTest expr   "1-2+3"
 */
 int main() {
     parseTest(number, "123");
