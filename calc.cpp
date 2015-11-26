@@ -436,19 +436,19 @@ Parser<int> number = Number();
 
 /*
 expr = do
-    x <- number
-    char '+'
-    y <- number
-    return [x, y]
+    x  <- number
+    xs <- many $ do
+        char '+'
+        number
+    return $ x:xs
 */
 struct Expr : public Closure< std::list<int> > {
     virtual Closure *clone() const { return new Expr; }
     virtual std::list<int> operator()(Source *s) const {
         int x = number(s);
-        char1('+')(s);
-        int y = number(s);
-        int ret[] = {x, y};
-        return std::list<int>(ret, ret + 2);
+        std::list<int> xs = many(char1('+') >> number)(s);
+        xs.push_front(x);
+        return xs;
     }
 };
 Parser< std::list<int> > expr = Expr();
@@ -457,8 +457,12 @@ Parser< std::list<int> > expr = Expr();
 main = do
     parseTest number "123"
     parseTest expr   "1+2"
+    parseTest expr   "123"
+    parseTest expr   "1+2+3"
 */
 int main() {
     parseTest(number, "123");
     parseTest(expr  , "1+2");
+    parseTest(expr  , "123");
+    parseTest(expr  , "1+2+3");
 }
