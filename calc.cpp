@@ -455,8 +455,7 @@ struct Expr : public Closure< std::list<int> > {
     virtual std::list<int> operator()(Source *s) const {
         int x = number(s);
         std::list<int> xs = many(char1('+') >> number)(s);
-        xs.push_front(x);
-        return xs;
+        return x + xs;
     }
 };
 Parser< std::list<int> > expr = Expr();
