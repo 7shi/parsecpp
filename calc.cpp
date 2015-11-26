@@ -380,9 +380,30 @@ struct Number : public Closure<int> {
 Parser<int> number = Number();
 
 /*
+expr = do
+    x <- number
+    char '+'
+    y <- number
+    return [x, y]
+*/
+struct Expr : public Closure< std::list<int> > {
+    virtual Closure *clone() const { return new Expr; }
+    virtual std::list<int> operator()(Source *s) const {
+        int x = number(s);
+        char1('+')(s);
+        int y = number(s);
+        int ret[] = {x, y};
+        return std::list<int>(ret, ret + 2);
+    }
+};
+Parser< std::list<int> > expr = Expr();
+
+/*
 main = do
     parseTest number "123"
+    parseTest expr   "1+2"
 */
 int main() {
     parseTest(number, "123");
+    parseTest(expr  , "1+2");
 }
