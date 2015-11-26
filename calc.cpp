@@ -20,6 +20,14 @@ std::ostream &operator<<(std::ostream &cout, const std::list<T> &list) {
     return cout << toString(list);
 }
 
+/* : */
+template <typename T>
+std::list<T> operator+(T x, const std::list<T> &list) {
+    std::list<T> ret = list;
+    ret.push_front(x);
+    return ret;
+}
+
 class Source {
     const char *p;
     int line, col;
