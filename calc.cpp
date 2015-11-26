@@ -450,6 +450,7 @@ bool isLower   (char ch) { return std::islower(ch); }
 bool isAlpha   (char ch) { return std::isalpha(ch); }
 bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
 bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
+bool isSpace   (char ch) { return ch == '\t'  || ch == ' ';   }
 
 /*
 digit    = satisfy isDigit    <|> left "not digit"
@@ -458,6 +459,7 @@ lower    = satisfy isLower    <|> left "not lower"
 alpha    = satisfy isAlpha    <|> left "not alpha"
 alphaNum = satisfy isAlphaNum <|> left "not alphaNum"
 letter   = satisfy isLetter   <|> left "not letter"
+space    = satisfy isSpace    <|> left "not space"
 */
 Parser<char> digit    = satisfy(isDigit   ) || left("not digit"   );
 Parser<char> upper    = satisfy(isUpper   ) || left("not upper"   );
@@ -465,6 +467,7 @@ Parser<char> lower    = satisfy(isLower   ) || left("not lower"   );
 Parser<char> alpha    = satisfy(isAlpha   ) || left("not alpha"   );
 Parser<char> alphaNum = satisfy(isAlphaNum) || left("not alphaNum");
 Parser<char> letter   = satisfy(isLetter  ) || left("not letter"  );
+Parser<char> space    = satisfy(isSpace   ) || left("not space"   );
 
 /*
 number = do
