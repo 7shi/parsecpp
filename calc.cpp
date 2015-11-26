@@ -346,9 +346,20 @@ Parser<char> alphaNum = satisfy(isAlphaNum) || left("not alphaNum");
 Parser<char> letter   = satisfy(isLetter  ) || left("not letter"  );
 
 /*
-number = many1 digit
+number = do
+    x <- many1 digit
+    return (read x :: Int)  -- •ÏŠ·
 */
-Parser<std::string> number = many1(digit);
+struct Number : public Closure<int> {
+    virtual Closure *clone() const { return new Number; }
+    virtual int operator()(Source *s) const {
+        std::string x = many1(digit)(s);
+        int ret;
+        std::istringstream(x) >> ret;
+        return ret;
+    }
+};
+Parser<int> number = Number();
 
 /*
 main = do
