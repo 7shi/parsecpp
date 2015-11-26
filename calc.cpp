@@ -2,6 +2,7 @@
 #include <sstream>
 #include <string>
 #include <list>
+#include <numeric>
 
 template <typename T>
 std::string toString(const std::list<T> &list) {
@@ -26,6 +27,12 @@ std::list<T> operator+(T x, const std::list<T> &list) {
     std::list<T> ret = list;
     ret.push_front(x);
     return ret;
+}
+
+/* sum */
+template <typename T>
+T sum(const std::list<T> &list) {
+    return std::accumulate(list.begin(), list.end(), 0);
 }
 
 class Source {
