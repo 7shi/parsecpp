@@ -507,24 +507,35 @@ int foldl(int x, const std::list<Section> &xs) {
 /*
 expr = do
     x  <- number
-    xs <- many $ do
+    fs <- many $ do
             char '+'
-            number
+            y <- number
+            return (+ y)
         <|> do
             char '-'
             y <- number
-            return $ -y
-    return $ sum $ x:xs
+            return $ subtract y
+        <|> do
+            char '*'
+            y <- number
+            return (* y)
+        <|> do
+            char '/'
+            y <- number
+            return (`div` y)
+    return $ foldl (\x f -> f x) x fs
 */
 struct Expr : public Closure<int> {
     virtual Closure *clone() const { return new Expr; }
     virtual int operator()(Source *s) const {
         int x = number(s);
-        std::list<int> xs = many(
-               char1('+') >>     number
-            || char1('-') >> neg(number)
+        std::list<Section> xs = many(
+               char1('+') >> number >= add
+            || char1('-') >> number >= sub
+            || char1('*') >> number >= mul
+            || char1('/') >> number >= div
         )(s);
-        return sum(x + xs);
+        return foldl(x, xs);
     }
 };
 Parser<int> expr = Expr();
@@ -537,6 +548,9 @@ main = do
     parseTest expr   "1+2+3"
     parseTest expr   "1-2-3"
     parseTest expr   "1-2+3"
+    parseTest expr   "2*3+4"
+    parseTest expr   "2+3*4"
+    parseTest expr   "100/10/2"
 */
 int main() {
     parseTest(number, "123");
@@ -545,4 +559,7 @@ int main() {
     parseTest(expr  , "1+2+3");
     parseTest(expr  , "1-2-3");
     parseTest(expr  , "1-2+3");
+    parseTest(expr  , "2*3+4");
+    parseTest(expr  , "2+3*4");
+    parseTest(expr  , "100/10/2");
 }
