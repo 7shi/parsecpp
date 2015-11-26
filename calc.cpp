@@ -494,6 +494,11 @@ Parser<char> letter   = satisfy(isLetter  ) || left("not letter"  );
 Parser<char> space    = satisfy(isSpace   ) || left("not space"   );
 
 /*
+spaces = skipMany space
+*/
+Parser<std::string> spaces = skipMany(space);
+
+/*
 number = do
     x <- many1 digit
     return (read x :: Int)  -- •ÏŠ·
