@@ -465,15 +465,22 @@ Parser<int> neg(const Parser<int> &p) {
 expr = do
     x  <- number
     xs <- many $ do
-        char '+'
-        number
+            char '+'
+            number
+        <|> do
+            char '-'
+            y <- number
+            return $ -y
     return $ sum $ x:xs
 */
 struct Expr : public Closure<int> {
     virtual Closure *clone() const { return new Expr; }
     virtual int operator()(Source *s) const {
         int x = number(s);
-        std::list<int> xs = many(char1('+') >> number)(s);
+        std::list<int> xs = many(
+               char1('+') >>     number
+            || char1('-') >> neg(number)
+        )(s);
         return sum(x + xs);
     }
 };
@@ -491,4 +498,6 @@ int main() {
     parseTest(expr  , "1+2");
     parseTest(expr  , "123");
     parseTest(expr  , "1+2+3");
+    parseTest(expr  , "1-2-3");
+    parseTest(expr  , "1-2+3");
 }
