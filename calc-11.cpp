@@ -419,8 +419,8 @@ factor = spaces
      <*  spaces
 */
 Parser<int> factor_ = spaces
-                  >> (char1('(') >> expr << char1(')') || number)
-                  << spaces;
+                   >> (char1('(') >> expr << char1(')') || number)
+                   << spaces;
 
 /*
 main = do
