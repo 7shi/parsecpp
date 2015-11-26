@@ -457,6 +457,14 @@ Parser< std::list<T> > many1(const Parser<T> &p) {
 }
 
 /*
+skipMany p = many p *> return ()
+*/
+template <typename T>
+Parser<std::string> skipMany(const Parser<T> &p) {
+    return many(p) >> right<std::string>("");
+}
+
+/*
 import Data.Char
 */
 #include <cctype>
