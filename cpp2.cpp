@@ -164,26 +164,6 @@ public:
     virtual ~BinaryOperator() { delete p1; delete p2; }
 };
 
-/*
-many p = ((:) <$> p <*> many p) <|> return []
-*/
-template <typename T>
-struct Many : public UnaryOperator<std::string, T> {
-    Many(const Closure<T> &p) : UnaryOperator<std::string, T>(p) {}
-    virtual Closure<std::string> *clone() const { return new Many<T>(*this->p); }
-    virtual std::string operator()(Source *s) const {
-        std::string ret;
-        try {
-            for (;;) ret += (*this->p)(s);
-        } catch (const std::string &e) {}
-        return ret;
-    }
-};
-template <typename T>
-Parser<std::string> many(const Parser<T> &p) {
-    return Many<T>(p.get());
-}
-
 /* sequence */
 template <typename T1, typename T2>
 struct Sequence : public BinaryOperator<std::string, T1, T2> {
@@ -309,6 +289,26 @@ public:
 };
 Parser<std::string> string(const std::string &str) {
     return String(str);
+}
+
+/*
+many p = ((:) <$> p <*> many p) <|> return []
+*/
+template <typename T>
+struct Many : public UnaryOperator<std::string, T> {
+    Many(const Closure<T> &p) : UnaryOperator<std::string, T>(p) {}
+    virtual Closure<std::string> *clone() const { return new Many<T>(*this->p); }
+    virtual std::string operator()(Source *s) const {
+        std::string ret;
+        try {
+            for (;;) ret += (*this->p)(s);
+        } catch (const std::string &e) {}
+        return ret;
+    }
+};
+template <typename T>
+Parser<std::string> many(const Parser<T> &p) {
+    return Many<T>(p.get());
 }
 
 /*

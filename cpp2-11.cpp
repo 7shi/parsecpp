@@ -105,20 +105,6 @@ Parser<char> left(const std::string &msg) {
     return left<char>(msg);
 }
 
-/*
-many p = ((:) <$> p <*> many p) <|> return []
-*/
-template <typename T>
-Parser<std::string> many(const Parser<T> &p) {
-    return [=](Source *s) {
-        std::string ret;
-        try {
-            for (;;) ret += p(s);
-        } catch (const std::string &e) {}
-        return ret;
-    };
-}
-
 /* sequence */
 template <typename T1, typename T2>
 Parser<std::string> operator+(const Parser<T1> &p1, const Parser<T2> &p2) {
@@ -203,6 +189,20 @@ Parser<std::string> string(const std::string &str) {
             s->next();
         }
         return str;
+    };
+}
+
+/*
+many p = ((:) <$> p <*> many p) <|> return []
+*/
+template <typename T>
+Parser<std::string> many(const Parser<T> &p) {
+    return [=](Source *s) {
+        std::string ret;
+        try {
+            for (;;) ret += p(s);
+        } catch (const std::string &e) {}
+        return ret;
     };
 }
 
