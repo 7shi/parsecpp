@@ -493,17 +493,9 @@ int foldl(int x, const std::list<Section> &xs) {
 }
 
 /*
-expr = do
+term = do
     x  <- number
     fs <- many $ do
-            char '+'
-            y <- number
-            return (+ y)
-        <|> do
-            char '-'
-            y <- number
-            return $ subtract y
-        <|> do
             char '*'
             y <- number
             return (* y)
@@ -513,15 +505,39 @@ expr = do
             return (`div` y)
     return $ foldl (\x f -> f x) x fs
 */
-struct Expr : public Closure<int> {
-    virtual Closure *clone() const { return new Expr; }
+struct Term : public Closure<int> {
+    virtual Closure *clone() const { return new Term; }
     virtual int operator()(Source *s) const {
         int x = number(s);
         std::list<Section> xs = many(
-               char1('+') >> number >= add
-            || char1('-') >> number >= sub
-            || char1('*') >> number >= mul
+               char1('*') >> number >= mul
             || char1('/') >> number >= div
+        )(s);
+        return foldl(x, xs);
+    }
+};
+Parser<int> term = Term();
+
+/*
+expr = do
+    x  <- term
+    fs <- many $ do
+            char '+'
+            y <- term
+            return (+ y)
+        <|> do
+            char '-'
+            y <- term
+            return $ subtract y
+    return $ foldl (\x f -> f x) x fs
+*/
+struct Expr : public Closure<int> {
+    virtual Closure *clone() const { return new Expr; }
+    virtual int operator()(Source *s) const {
+        int x = term(s);
+        std::list<Section> xs = many(
+               char1('+') >> term >= add
+            || char1('-') >> term >= sub
         )(s);
         return foldl(x, xs);
     }
