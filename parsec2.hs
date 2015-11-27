@@ -1,4 +1,5 @@
 import Text.Parsec
+import Control.Applicative ((<$>), (<*>))
 
 test1  = sequence [anyChar, anyChar]
 test2  = (++) <$> test1 <*> sequence [anyChar]
