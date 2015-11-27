@@ -2,13 +2,6 @@
 #include <string>
 
 /*
-import Data.Char
-*/
-#include <cctype>
-bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
-bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
-
-/*
 parseTest p s = do
     print $ evalState p s
     `catch` \(SomeException e) ->
@@ -51,6 +44,17 @@ template<char c> char char1(const char **xs) {
 }
 
 /*
+import Data.Char
+*/
+#include <cctype>
+bool isDigit   (char ch) { return std::isdigit(ch); }
+bool isUpper   (char ch) { return std::isupper(ch); }
+bool isLower   (char ch) { return std::islower(ch); }
+bool isAlpha   (char ch) { return std::isalpha(ch); }
+bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
+bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
+
+/*
 digit    = satisfy isDigit
 upper    = satisfy isUpper
 lower    = satisfy isLower
@@ -58,13 +62,12 @@ alpha    = satisfy isAlpha
 alphaNum = satisfy isAlphaNum
 letter   = satisfy isLetter
 */
-template<int (*f)(int)> bool conv(char ch) { return f(ch); }
-char (*digit   )(const char **) = satisfy< conv<std::isdigit> >;
-char (*upper   )(const char **) = satisfy< conv<std::isupper> >;
-char (*lower   )(const char **) = satisfy< conv<std::islower> >;
-char (*alpha   )(const char **) = satisfy< conv<std::isalpha> >;
-char (*alphaNum)(const char **) = satisfy< isAlphaNum >;
-char (*letter  )(const char **) = satisfy< isLetter   >;
+char (*digit   )(const char **) = satisfy<isDigit   >;
+char (*upper   )(const char **) = satisfy<isUpper   >;
+char (*lower   )(const char **) = satisfy<isLower   >;
+char (*alpha   )(const char **) = satisfy<isAlpha   >;
+char (*alphaNum)(const char **) = satisfy<isAlphaNum>;
+char (*letter  )(const char **) = satisfy<isLetter  >;
 
 /*
 test1 = do

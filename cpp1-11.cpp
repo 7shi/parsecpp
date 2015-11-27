@@ -2,13 +2,6 @@
 #include <string>
 #include <functional>
 
-/*
-import Data.Char
-*/
-#include <cctype>
-bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
-bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
-
 template <typename T>
 using Parser = std::function<T (const char **)>;
 
@@ -54,6 +47,16 @@ char c = satisfy (== c)
 Parser<char> char1(char ch) {
     return satisfy([=](char c) { return c == ch; });
 }
+/*
+import Data.Char
+*/
+#include <cctype>
+bool isDigit   (char ch) { return std::isdigit(ch); }
+bool isUpper   (char ch) { return std::isupper(ch); }
+bool isLower   (char ch) { return std::islower(ch); }
+bool isAlpha   (char ch) { return std::isalpha(ch); }
+bool isAlphaNum(char ch) { return isalpha(ch) || isdigit(ch); }
+bool isLetter  (char ch) { return isalpha(ch) || ch == '_';   }
 
 /*
 digit    = satisfy isDigit
@@ -63,10 +66,10 @@ alpha    = satisfy isAlpha
 alphaNum = satisfy isAlphaNum
 letter   = satisfy isLetter
 */
-auto digit    = satisfy([](char ch) { return std::isdigit(ch); });
-auto upper    = satisfy([](char ch) { return std::isupper(ch); });
-auto lower    = satisfy([](char ch) { return std::islower(ch); });
-auto alpha    = satisfy([](char ch) { return std::isalpha(ch); });
+auto digit    = satisfy(isDigit   );
+auto upper    = satisfy(isUpper   );
+auto lower    = satisfy(isLower   );
+auto alpha    = satisfy(isAlpha   );
 auto alphaNum = satisfy(isAlphaNum);
 auto letter   = satisfy(isLetter  );
 
