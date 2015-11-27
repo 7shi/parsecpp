@@ -1,4 +1,4 @@
-TARGET = cpp1    cpp2    cpp3    \
+TARGET = cpp1    cpp2    cpp3    test \
          cpp1-03 cpp2-03 cpp3-03 \
          cpp1-11 cpp2-11 cpp3-11 \
          ref1    ref2    ref3    \
@@ -14,6 +14,8 @@ cpp1: cpp1.cpp parsecpp.cpp
 cpp2: cpp2.cpp parsecpp.cpp
 	$(CXX11) -o $@ $<
 cpp3: cpp3.cpp parsecpp.cpp
+	$(CXX11) -o $@ $<
+test: test.cpp parsecpp.cpp
 	$(CXX11) -o $@ $<
 
 cpp1-03: cpp1-03.cpp
