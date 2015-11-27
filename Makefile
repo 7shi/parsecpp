@@ -1,5 +1,5 @@
 TARGET = cpp1-03 cpp2-03 calc-03 \
-		 cpp2-11 calc-11 \
+		 cpp1-11 cpp2-11 calc-11 \
 		 ref1 ref2 ref3 \
 		 parsec1 parsec2 parsec3
 
@@ -15,6 +15,8 @@ cpp2-03: cpp2-03.cpp
 calc-03: calc-03.cpp
 	$(CXX) -o $@ $<
 
+cpp1-11: cpp1-11.cpp
+	$(CXX11) -o $@ $<
 cpp2-11: cpp2-11.cpp
 	$(CXX11) -o $@ $<
 calc-11: calc-11.cpp
